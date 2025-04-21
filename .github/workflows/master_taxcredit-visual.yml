@@ -70,5 +70,5 @@ jobs:
         with:
           app-name: 'taxcredit-visual'
           slot-name: 'Production'
-          package: .
+          package: ./build
           
