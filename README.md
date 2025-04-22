@@ -1,70 +1,71 @@
-# Getting Started with Create React App
+# DB 필터링 과정 시각화 앱
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+이 프로젝트는 데이터베이스 필터링 과정을 시각적으로 보여주는 React 기반 웹 애플리케이션입니다.
 
-## Available Scripts
+## 프로젝트 기술 스택
 
-In the project directory, you can run:
+- **프론트엔드 프레임워크**: React 18
+- **UI 스타일링**: TailwindCSS
+- **차트 라이브러리**: Recharts
+- **배포 환경**: Azure Static Web App
+- **CI/CD**: GitHub Actions
 
-### `npm start`
+## 프로젝트 구조
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+```
+taxcredit_mobileapp/my-app/
+├── .github/workflows/    # GitHub Actions 워크플로우 설정
+├── build/                # 빌드 결과물 (배포용)
+├── public/               # 정적 파일
+├── src/
+│   ├── components/       # React 컴포넌트
+│   │   ├── FunnelChart.jsx  # 깔때기형 차트 컴포넌트
+│   │   └── RegionList.jsx   # 지역 목록 컴포넌트
+│   ├── data/             # 데이터 모델
+│   │   └── dummyRefinementData.js  # 샘플 데이터
+│   ├── App.js            # 메인 앱 컴포넌트
+│   └── index.js          # 진입점
+├── .gitignore            # Git 무시 파일 목록
+├── package.json          # 의존성 및 스크립트 정의
+├── postcss.config.js     # PostCSS 설정
+└── tailwind.config.js    # TailwindCSS 설정
+```
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## 로컬 개발 환경 설정
 
-### `npm test`
+1. 저장소 클론:
+   ```bash
+   git clone https://github.com/naub5k/taxcredit-visual.git
+   cd taxcredit-visual
+   ```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+2. 의존성 설치:
+   ```bash
+   npm install
+   ```
 
-### `npm run build`
+3. 개발 서버 실행:
+   ```bash
+   npm start
+   ```
+   애플리케이션이 http://localhost:3000 에서 실행됩니다.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## 배포 방법
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+이 프로젝트는 자동화된 CI/CD 파이프라인을 사용합니다:
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+1. `master` 브랜치에 변경사항을 커밋하고 푸시합니다.
+2. GitHub Actions가 자동으로 빌드 및 테스트를 실행합니다.
+3. 빌드가 성공하면 Azure Static Web App에 자동으로 배포됩니다.
+4. 배포된 애플리케이션은 다음 URL에서 접근 가능합니다:
+   - https://taxcredit-visual.azurewebsites.net
 
-### `npm run eject`
+### SPA 라우팅
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+이 앱은 Single Page Application으로, `staticwebapp.config.json` 파일을 통해 Azure Static Web App에서 라우팅을 설정합니다. 이 파일은 모든 라우트를 `index.html`로 리디렉션합니다.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## 프로젝트 유지 관리
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- **의존성 업데이트**: `npm outdated` 명령을 실행하여 업데이트가 필요한 패키지를 확인하고, `npm update` 명령으로 업데이트할 수 있습니다.
+- **테스트**: `npm test -- --passWithNoTests` 명령으로 테스트를 실행합니다.
+- **프로덕션 빌드**: `npm run build` 명령으로 최적화된 프로덕션 빌드를 생성합니다.
