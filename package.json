@@ -15,7 +15,7 @@
                      },
     "scripts":  {
                     "build":  "react-scripts build",
-                    "deploy":  "\u0026 \"D:\\Program Files\\Git\\cmd\\git.exe\" push azure HEAD:master",
+                    "deploy":  "\"D:\\Program Files\\Git\\cmd\\git.exe\" push azure HEAD:master",
                     "start":  "react-scripts start"
                 },
     "eslintConfig":  {
