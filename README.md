@@ -72,6 +72,6 @@ taxcredit_mobileapp/my-app/
 
 # Taxcredit Visual
 
-### 최종 점검 타임스탬프: 2025-04-30 19:15
+### 최종 점검 타임스탬프: 2025-04-30 19:45
 
-Azure App Service 배포를 위한 GitHub Actions 워크플로우 설정 검증 - Client ID 수정 후
+Azure App Service 배포를 위한 GitHub Actions 워크플로우 설정 검증 - Client ID 수정 후 재시도
