@@ -33,9 +33,37 @@ git commit -m "test: Azure 로그인 및 배포 기능 최종 점검"
 git push origin master
 ```
 
-### 실행 결과
+### 실행 과정 및 문제 해결
 
-GitHub Actions 로그에서 azure/login 단계가 성공적으로 실행되었으며, 다음과 같은 결과를 확인했습니다:
+첫 번째 실행에서 다음과 같은 오류가 발생했습니다:
+
+```
+Run azure/login@v2
+Error: Login failed with Error: Ensure 'subscription-id' is supplied or 'allow-no-subscriptions' is 'true'.. Double check if the 'auth-type' is correct. Refer to https://github.com/Azure/login#readme for more information.
+```
+
+#### 문제 원인 분석
+이 오류는 GitHub Secrets의 `AZURE_SUBSCRIPTION_ID` 값이 로그인 과정에서 제대로 인식되지 않아 발생했습니다.
+
+#### 해결 방법
+다음과 같이 워크플로우 파일을 수정했습니다:
+
+1. subscription-id를 GitHub Secrets 대신 직접 값으로 설정
+2. `allow-no-subscriptions: true` 옵션 추가
+
+```yaml
+- name: Azure Login
+  uses: azure/login@v2
+  with:
+    client-id: ${{ secrets.AZURE_CLIENT_ID }}
+    tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+    subscription-id: 'bbd4460e-5bbf-4ab6-ae25-ce532a24f6ab'
+    allow-no-subscriptions: true
+```
+
+### 수정 후 실행 결과
+
+GitHub Actions 로그에서 azure/login 단계가 성공적으로 실행됨을 확인했습니다:
 
 ```
 Run azure/login@v2
@@ -45,7 +73,7 @@ Run azure/login@v2
     subscription-id: ***
     enable-AzPSSession: false
     environment: azurecloud
-    allow-no-subscriptions: false
+    allow-no-subscriptions: true
     audience: api://AzureADTokenExchange
     auth-type: SERVICE_PRINCIPAL
 Running Azure CLI Login.
