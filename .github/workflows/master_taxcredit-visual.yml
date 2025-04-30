@@ -60,12 +60,12 @@ jobs:
         run: |
           echo "OK" > build/health
 
-      - name: Login to Azure
+      - name: Azure Login
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_716F85D9505549B6A0AAADA4E3CE8EA4 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_BD2DEDDFD6B548F390790A06FD5FB2AC }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_0EDF7B8D47B74CD58F0B4F14BE133466 }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
