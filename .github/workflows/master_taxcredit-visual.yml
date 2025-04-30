@@ -56,6 +56,10 @@ jobs:
             </system.webServer>
           </configuration>' > build/web.config
 
+      - name: Create health endpoint for Azure App Service
+        run: |
+          echo "OK" > build/health
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
