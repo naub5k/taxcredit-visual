@@ -69,3 +69,9 @@ taxcredit_mobileapp/my-app/
 - **의존성 업데이트**: `npm outdated` 명령을 실행하여 업데이트가 필요한 패키지를 확인하고, `npm update` 명령으로 업데이트할 수 있습니다.
 - **테스트**: `npm test -- --passWithNoTests` 명령으로 테스트를 실행합니다.
 - **프로덕션 빌드**: `npm run build` 명령으로 최적화된 프로덕션 빌드를 생성합니다.
+
+# Taxcredit Visual
+
+### 최종 점검 타임스탬프: 2025-04-30 18:30
+
+Azure App Service 배포를 위한 GitHub Actions 워크플로우 설정 검증
