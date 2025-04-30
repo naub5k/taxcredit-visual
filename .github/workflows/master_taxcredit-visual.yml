@@ -67,6 +67,7 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: 'bbd4460e-5bbf-4ab6-ae25-ce532a24f6ab'
           allow-no-subscriptions: true
+          auth-type: oidc
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
