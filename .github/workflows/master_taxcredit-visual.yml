@@ -1,3 +1,4 @@
+
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 name: Build and deploy Node.js app to Azure Web App - taxcredit-visual
 
@@ -96,6 +97,17 @@ jobs:
           subscription-id: 'bbd4460e-5bbf-4ab6-ae25-ce532a24f6ab'
           allow-no-subscriptions: true
 
+      - name: Verify build content before deployment
+        run: |
+          echo "Checking build directory content before deployment..."
+          find build -type f | sort
+          echo "Total files in build directory: $(find build -type f | wc -l)"
+          echo "Content of index.html:"
+          cat build/index.html | head -20
+          echo "Creating build.zip for direct deployment verification..."
+          cd build && zip -r ../build.zip * && cd ..
+          echo "✅ Build content verified and archived for deployment."
+
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
@@ -103,7 +115,36 @@ jobs:
           app-name: 'taxcredit-visual'
           slot-name: 'production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
-          package: ./build
+          package: ./build.zip
+          clean: true
+          restart: true
+
+      - name: Verify deployment with Kudu API
+        run: |
+          echo "Getting deployment credentials from publish profile..."
+          KUDU_URL=$(echo "${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}" | grep -o 'publishUrl="[^"]*"' | cut -d'"' -f2)
+          USERNAME=$(echo "${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}" | grep -o 'userName="[^"]*"' | cut -d'"' -f2)
+          PASSWORD=$(echo "${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}" | grep -o 'userPWD="[^"]*"' | cut -d'"' -f2)
+          
+          echo "Waiting for deployment to complete and files to be accessible..."
+          sleep 60
+          
+          echo "Checking content of wwwroot via Kudu API..."
+          RESPONSE=$(curl -s -u "$USERNAME:$PASSWORD" "https://$KUDU_URL/api/vfs/site/wwwroot/" -H "Accept: application/json")
+          echo "Files in wwwroot directory:"
+          echo "$RESPONSE" | grep -o '"name":"[^"]*"' | cut -d'"' -f4
+          
+          if echo "$RESPONSE" | grep -q "index.html"; then
+            echo "✅ index.html found in wwwroot"
+          else
+            echo "::warning::index.html not found in wwwroot. Deployment may have failed."
+          fi
+          
+          if echo "$RESPONSE" | grep -q "static"; then
+            echo "✅ static directory found in wwwroot"
+          else
+            echo "::warning::static directory not found in wwwroot. Deployment may have failed."
+          fi
 
       - name: Verify deployment
         run: |
