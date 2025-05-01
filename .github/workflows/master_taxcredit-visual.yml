@@ -14,6 +14,8 @@ permissions:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    env:
+      PUBLISHPROFILE: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
     steps:
       - uses: actions/checkout@v4
 
@@ -103,41 +105,99 @@ jobs:
           echo "Total files in build directory: $(find build -type f | wc -l)"
           echo "Content of index.html:"
           cat build/index.html | head -20
-          echo "Creating build.zip for direct deployment verification..."
+          
+          # deploy.zip이 있으면 제거 (불필요한 파일 정리)
+          if [ -f "deploy.zip" ]; then
+            echo "🔄 Removing unnecessary deploy.zip file"
+            rm -f deploy.zip
+          fi
+          
+          # build.zip 명시적 생성 - build/ 폴더 내용만 루트에 압축
+          echo "🔄 Creating build.zip with the correct structure..."
           cd build && zip -r ../build.zip * && cd ..
+          
+          # zip 파일 존재 검증
+          if [ ! -f "build.zip" ]; then
+            echo "::error::build.zip file was not created. Deployment will fail."
+            exit 1
+          fi
+          
+          # zip 파일 크기 검증
+          ZIP_SIZE_BYTES=$(du -b build.zip | cut -f1)
+          if [ "$ZIP_SIZE_BYTES" -lt 1000 ]; then
+            echo "::error::build.zip is too small (${ZIP_SIZE_BYTES} bytes). The compression likely failed."
+            exit 1
+          fi
+          
           echo "✅ Build content verified and archived for deployment."
+          echo "build.zip details:"
+          du -h build.zip
           echo "Verifying ZIP file contents..."
           unzip -l build.zip | head -10
 
-      - name: Additional ZIP file structure verification
-        if: always()
+      - name: Strict ZIP structure verification
         run: |
-          echo "Detailed ZIP file structure verification..."
-          unzip -l build.zip
-          echo "Checking for key files in ZIP root..."
-          if unzip -l build.zip | grep -q "index.html"; then
-            echo "✅ index.html found at ZIP root"
-          else
-            echo "⚠️ index.html not found at ZIP root"
+          echo "Running strict ZIP structure verification..."
+          
+          # 중요 파일들이 루트에 직접 있는지 확인
+          echo "Checking zip file structure..."
+          if unzip -l build.zip | grep -q "build/"; then
+            echo "::error::ZIP file contains nested 'build/' directory. The structure is incorrect."
+            echo "Current ZIP structure (showing nested paths):"
+            unzip -l build.zip | grep "build/"
+            exit 1
           fi
           
-          if unzip -l build.zip | grep -q "static/"; then
-            echo "✅ static/ directory found at ZIP root"
+          # 핵심 파일들 루트 레벨 검증
+          echo "Checking for essential files at the root level..."
+          MISSING_FILES=0
+          
+          if ! unzip -l build.zip | grep -q "index.html"; then
+            echo "::error::index.html not found at zip root"
+            MISSING_FILES=$((MISSING_FILES+1))
           else
-            echo "⚠️ static/ directory not found at ZIP root"
+            echo "✅ index.html found at zip root"
           fi
           
-          if unzip -l build.zip | grep -q "favicon.ico"; then
-            echo "✅ favicon.ico found at ZIP root"
+          if ! unzip -l build.zip | grep -q "static/"; then
+            echo "::error::static/ directory not found at zip root"
+            MISSING_FILES=$((MISSING_FILES+1))
           else
-            echo "⚠️ favicon.ico not found at ZIP root"
+            echo "✅ static/ directory found at zip root"
           fi
+          
+          if ! unzip -l build.zip | grep -q "favicon.ico"; then
+            echo "::warning::favicon.ico not found at zip root"
+          else
+            echo "✅ favicon.ico found at zip root"
+          fi
+          
+          if [ $MISSING_FILES -gt 0 ]; then
+            echo "::error::ZIP file is missing $MISSING_FILES essential files at root level"
+            exit 1
+          fi
+          
+          echo "✅ ZIP structure verification passed! The build.zip file is ready for deployment."
 
       - name: Manual deployment using Kudu API
         run: |
           echo "Extracting credentials from publish profile..."
-          # PublishProfile에서 정보 추출 로직 개선
-          PUBLISH_URL_RAW=$(echo "${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}" | grep -o 'publishUrl="[^"]*"' | cut -d'"' -f2)
+          # PublishProfile을 환경변수로 받아 파일로 저장 후 파싱
+          echo "$PUBLISHPROFILE" > publishprofile.xml
+          
+          # 파일 생성 확인 로그 추가
+          if [ -s publishprofile.xml ]; then
+            echo "✅ publishprofile.xml 파일이 성공적으로 생성되었습니다."
+            PROFILESIZE=$(du -h publishprofile.xml | cut -f1)
+            echo "파일 크기: $PROFILESIZE"
+          else
+            echo "⚠️ publishprofile.xml 파일이 비어 있거나 생성되지 않았습니다."
+            echo "::error::PublishProfile 파일 생성 실패. 배포가 중단됩니다."
+            exit 1
+          fi
+          
+          # 파일에서 정보 추출
+          PUBLISH_URL_RAW=$(grep -o 'publishUrl="[^"]*"' publishprofile.xml | cut -d'"' -f2)
           echo "Raw publishUrl: $PUBLISH_URL_RAW"
           
           # URL 파싱 개선 - 도메인 부분만 정확히 추출
@@ -154,8 +214,19 @@ jobs:
           echo "Processed Kudu domain: $KUDU_DOMAIN"
           echo "Final Kudu API URL: $KUDU_API_URL"
           
-          USERNAME=$(echo "${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}" | grep -o 'userName="[^"]*"' | cut -d'"' -f2)
-          PASSWORD=$(echo "${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}" | grep -o 'userPWD="[^"]*"' | cut -d'"' -f2)
+          USERNAME=$(grep -o 'userName="[^"]*"' publishprofile.xml | cut -d'"' -f2)
+          PASSWORD=$(grep -o 'userPWD="[^"]*"' publishprofile.xml | cut -d'"' -f2)
+          
+          # 파싱 결과 검증
+          if [ -z "$PUBLISH_URL_RAW" ] || [ -z "$USERNAME" ] || [ -z "$PASSWORD" ]; then
+            echo "⚠️ PublishProfile에서 필요한 정보를 추출하지 못했습니다."
+            echo "::error::PublishProfile 파싱 실패. 배포가 중단됩니다."
+            exit 1
+          fi
+          
+          # 보안을 위해 임시 파일 삭제
+          rm -f publishprofile.xml
+          echo "✅ 민감한 정보가 포함된 임시 파일이 삭제되었습니다."
           
           echo "Preparing for ZIP deployment via Kudu API..."
           ZIP_SIZE=$(du -h build.zip | cut -f1)
