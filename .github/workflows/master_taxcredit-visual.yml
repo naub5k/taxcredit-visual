@@ -60,6 +60,22 @@ jobs:
         run: |
           echo "OK" > build/health
 
+      - name: Create staticwebapp.config.json for SPA routing
+        run: |
+          echo '{
+            "navigationFallback": {
+              "rewrite": "/index.html",
+              "exclude": ["/static/*", "/images/*", "/*.{png,jpg,gif,ico,css,js}"]
+            },
+            "routes": [
+              {
+                "route": "/*",
+                "serve": "/index.html",
+                "statusCode": 200
+              }
+            ]
+          }' > build/staticwebapp.config.json
+
       - name: Azure Login
         uses: azure/login@v2
         with:
@@ -72,4 +88,28 @@ jobs:
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'taxcredit-visual'
+          slot-name: 'production'
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
           package: ./build
+
+      - name: Verify deployment
+        run: |
+          echo "Deployment completed, waiting for 30 seconds for the app to be available..."
+          sleep 30
+          
+          # Check if the app is accessible
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://taxcredit-visual.azurewebsites.net/health)
+          echo "Health endpoint status: $HTTP_STATUS"
+          
+          if [ "$HTTP_STATUS" == "200" ]; then
+            echo "✅ Deployment successful! App is accessible."
+          else
+            echo "⚠️ App might not be fully accessible yet. Please check manually."
+          fi
+
+      - name: Deployment summary
+        run: |
+          echo "## 📊 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "* **Application:** taxcredit-visual" >> $GITHUB_STEP_SUMMARY
+          echo "* **Deployment time:** $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "* **URL:** https://taxcredit-visual.azurewebsites.net" >> $GITHUB_STEP_SUMMARY
