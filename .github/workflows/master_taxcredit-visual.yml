@@ -196,9 +196,32 @@ jobs:
             exit 1
           fi
           
-          # 파일에서 정보 추출
-          PUBLISH_URL_RAW=$(grep 'publishUrl=' publishprofile.xml | head -n1 | grep -o 'publishUrl="[^"]*"' | cut -d'"' -f2)
+          # 파일에서 정보 추출 - ZipDeploy 노드만 정밀하게 추출
+          echo "ZipDeploy 노드 정밀 추출 시작..."
+          # awk를 사용하여 publishMethod="ZipDeploy"가 포함된 publishProfile에서만 정보 추출
+          PUBLISH_URL_RAW=$(awk '/publishProfile/ && /publishMethod="ZipDeploy"/ { match($0, /publishUrl="[^"]+"/); print substr($0, RSTART+12, RLENGTH-13); exit }' publishprofile.xml)
+          USERNAME=$(awk '/publishProfile/ && /publishMethod="ZipDeploy"/ { match($0, /userName="[^"]+"/); print substr($0, RSTART+10, RLENGTH-11); exit }' publishprofile.xml)
+          PASSWORD=$(awk '/publishProfile/ && /publishMethod="ZipDeploy"/ { match($0, /userPWD="[^"]+"/); print substr($0, RSTART+9, RLENGTH-10); exit }' publishprofile.xml)
+          
+          # 백업 추출 방식 (ZipDeploy가 없는 경우를 위한 대비책)
+          if [ -z "$PUBLISH_URL_RAW" ]; then
+            echo "⚠️ ZipDeploy 노드를 찾지 못했습니다. 다른 방식으로 시도합니다..."
+            # SCM 도메인 기반 추출 (*.scm.azurewebsites.net 패턴 우선)
+            PUBLISH_URL_RAW=$(awk '/publishProfile/ && /\.scm\.azurewebsites\.net/ { match($0, /publishUrl="[^"]+"/); print substr($0, RSTART+12, RLENGTH-13); exit }' publishprofile.xml)
+            USERNAME=$(awk '/publishProfile/ && /\.scm\.azurewebsites\.net/ { match($0, /userName="[^"]+"/); print substr($0, RSTART+10, RLENGTH-11); exit }' publishprofile.xml)
+            PASSWORD=$(awk '/publishProfile/ && /\.scm\.azurewebsites\.net/ { match($0, /userPWD="[^"]+"/); print substr($0, RSTART+9, RLENGTH-10); exit }' publishprofile.xml)
+          fi
+          
           echo "Raw publishUrl: $PUBLISH_URL_RAW"
+          
+          # 값이 추출되었는지 검증
+          if [ -z "$PUBLISH_URL_RAW" ] || [ -z "$USERNAME" ] || [ -z "$PASSWORD" ]; then
+            echo "::error::ZipDeploy 노드 또는 SCM 도메인에서 필요한 정보를 추출하지 못했습니다."
+            echo "publishprofile.xml 내용 분석:"
+            grep -n "publishProfile" publishprofile.xml
+            echo "::error::PublishProfile 파싱 실패. 배포가 중단됩니다."
+            exit 1
+          fi
           
           # URL 파싱 개선 - 도메인 부분만 정확히 추출
           if [[ $PUBLISH_URL_RAW == *"://"* ]]; then
@@ -217,8 +240,9 @@ jobs:
           # URL 형식 검증 - scm 호스트 이름이 맞는지 확인
           if [[ ! "$KUDU_DOMAIN" =~ \.scm\.azurewebsites\.net$ ]]; then
             echo "::error::Kudu 도메인이 예상 형식(*.scm.azurewebsites.net)과 일치하지 않습니다: $KUDU_DOMAIN"
-            echo "publishprofile.xml에서 추출된 문자열 확인:"
-            grep -n 'publishUrl=' publishprofile.xml
+            echo "publishprofile.xml에서 추출된 값 확인:"
+            echo "PUBLISH_URL_RAW=$PUBLISH_URL_RAW"
+            echo "KUDU_DOMAIN=$KUDU_DOMAIN"
             exit 1
           fi
           
@@ -228,15 +252,14 @@ jobs:
             exit 1
           fi
           
-          USERNAME=$(grep 'userName=' publishprofile.xml | head -n1 | grep -o 'userName="[^"]*"' | cut -d'"' -f2)
-          PASSWORD=$(grep 'userPWD=' publishprofile.xml | head -n1 | grep -o 'userPWD="[^"]*"' | cut -d'"' -f2)
+          # 검증 통과 확인
+          echo "✅ URL 형식 검증 통과: $KUDU_API_URL"
           
-          # 파싱 결과 검증
-          if [ -z "$PUBLISH_URL_RAW" ] || [ -z "$USERNAME" ] || [ -z "$PASSWORD" ]; then
-            echo "⚠️ PublishProfile에서 필요한 정보를 추출하지 못했습니다."
-            echo "::error::PublishProfile 파싱 실패. 배포가 중단됩니다."
-            exit 1
-          fi
+          # 파싱 결과 출력 (보안을 위해 패스워드는 출력하지 않음)
+          echo "추출된 배포 정보:"
+          echo "- URL: $PUBLISH_URL_RAW"
+          echo "- Username: $USERNAME"
+          echo "- Password: ********"
           
           # 보안을 위해 임시 파일 삭제
           rm -f publishprofile.xml
