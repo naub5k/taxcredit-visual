@@ -197,7 +197,7 @@ jobs:
           fi
           
           # 파일에서 정보 추출
-          PUBLISH_URL_RAW=$(grep -o 'publishUrl="[^"]*"' publishprofile.xml | cut -d'"' -f2)
+          PUBLISH_URL_RAW=$(grep 'publishUrl=' publishprofile.xml | head -n1 | grep -o 'publishUrl="[^"]*"' | cut -d'"' -f2)
           echo "Raw publishUrl: $PUBLISH_URL_RAW"
           
           # URL 파싱 개선 - 도메인 부분만 정확히 추출
@@ -214,8 +214,22 @@ jobs:
           echo "Processed Kudu domain: $KUDU_DOMAIN"
           echo "Final Kudu API URL: $KUDU_API_URL"
           
-          USERNAME=$(grep -o 'userName="[^"]*"' publishprofile.xml | cut -d'"' -f2)
-          PASSWORD=$(grep -o 'userPWD="[^"]*"' publishprofile.xml | cut -d'"' -f2)
+          # URL 형식 검증 - scm 호스트 이름이 맞는지 확인
+          if [[ ! "$KUDU_DOMAIN" =~ \.scm\.azurewebsites\.net$ ]]; then
+            echo "::error::Kudu 도메인이 예상 형식(*.scm.azurewebsites.net)과 일치하지 않습니다: $KUDU_DOMAIN"
+            echo "publishprofile.xml에서 추출된 문자열 확인:"
+            grep -n 'publishUrl=' publishprofile.xml
+            exit 1
+          fi
+          
+          # URL 형식 검증 - 최종 URL이 유효한지 확인
+          if [[ ! "$KUDU_API_URL" =~ ^https://[^/]+\.scm\.azurewebsites\.net/api/zipdeploy$ ]]; then
+            echo "::error::최종 Kudu API URL이 예상 형식과 일치하지 않습니다: $KUDU_API_URL"
+            exit 1
+          fi
+          
+          USERNAME=$(grep 'userName=' publishprofile.xml | head -n1 | grep -o 'userName="[^"]*"' | cut -d'"' -f2)
+          PASSWORD=$(grep 'userPWD=' publishprofile.xml | head -n1 | grep -o 'userPWD="[^"]*"' | cut -d'"' -f2)
           
           # 파싱 결과 검증
           if [ -z "$PUBLISH_URL_RAW" ] || [ -z "$USERNAME" ] || [ -z "$PASSWORD" ]; then
