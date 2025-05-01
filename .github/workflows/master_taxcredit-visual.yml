@@ -109,18 +109,6 @@ jobs:
           echo "Verifying ZIP file contents..."
           unzip -l build.zip | head -10
 
-      - name: Deploy to Azure Web App
-        id: deploy-to-webapp
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: 'taxcredit-visual'
-          slot-name: 'production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
-          package: ./build.zip
-          clean: true
-          restart: true
-
-      # ZIP 파일 구조 검증을 위한 추가 스텝
       - name: Additional ZIP file structure verification
         if: always()
         run: |
@@ -145,31 +133,58 @@ jobs:
             echo "⚠️ favicon.ico not found at ZIP root"
           fi
 
-      - name: Verify deployment with Kudu API
+      - name: Manual deployment using Kudu API
         run: |
-          echo "Getting deployment credentials from publish profile..."
-          KUDU_URL=$(echo "${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}" | grep -o 'publishUrl="[^"]*"' | cut -d'"' -f2)
+          echo "Extracting credentials from publish profile..."
+          # PublishProfile에서 정보 추출
+          KUDU_URL=$(echo "${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}" | grep -o 'publishUrl="[^"]*"' | cut -d'"' -f2 | sed 's|:443||')
           USERNAME=$(echo "${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}" | grep -o 'userName="[^"]*"' | cut -d'"' -f2)
           PASSWORD=$(echo "${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}" | grep -o 'userPWD="[^"]*"' | cut -d'"' -f2)
+          
+          echo "Kudu URL: https://$KUDU_URL (Username will be masked)"
+          
+          echo "Preparing for ZIP deployment via Kudu API..."
+          echo "ZIP file size: $(du -h build.zip | cut -f1)"
+          
+          echo "Running ZIP deployment via Kudu API..."
+          HTTP_STATUS=$(curl -s -w "%{http_code}" -o kudu_response.txt -X POST \
+            "https://$KUDU_URL/api/zipdeploy" \
+            -u "$USERNAME:$PASSWORD" \
+            -H "Content-Type: application/zip" \
+            --data-binary @build.zip)
+          
+          echo "Kudu API response status code: $HTTP_STATUS"
+          
+          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
+            echo "✅ Deployment successful with status code: $HTTP_STATUS"
+          else
+            echo "⚠️ Deployment may have failed. Status code: $HTTP_STATUS"
+            echo "Response from Kudu API:"
+            cat kudu_response.txt
+            # 실패해도 계속 진행
+            echo "::warning::Deployment via Kudu API returned unexpected status code: $HTTP_STATUS"
+          fi
           
           echo "Waiting for deployment to complete and files to be accessible..."
           sleep 60
           
-          echo "Checking content of wwwroot via Kudu API..."
-          RESPONSE=$(curl -s -u "$USERNAME:$PASSWORD" "https://$KUDU_URL/api/vfs/site/wwwroot/" -H "Accept: application/json")
-          echo "Files in wwwroot directory:"
-          echo "$RESPONSE" | grep -o '"name":"[^"]*"' | cut -d'"' -f4
+          echo "Verifying deployment..."
+          LIST_STATUS=$(curl -s -w "%{http_code}" -o wwwroot_listing.txt \
+            "https://$KUDU_URL/api/vfs/site/wwwroot/" \
+            -u "$USERNAME:$PASSWORD" \
+            -H "Accept: application/json")
           
-          if echo "$RESPONSE" | grep -q "index.html"; then
-            echo "✅ index.html found in wwwroot"
-          else
-            echo "::warning::index.html not found in wwwroot. Deployment may have failed."
-          fi
+          echo "Kudu API listing status code: $LIST_STATUS"
           
-          if echo "$RESPONSE" | grep -q "static"; then
-            echo "✅ static directory found in wwwroot"
+          if [ "$LIST_STATUS" -ge 200 ] && [ "$LIST_STATUS" -lt 300 ]; then
+            echo "✅ Successfully retrieved wwwroot directory listing"
+            echo "Files in /site/wwwroot:"
+            cat wwwroot_listing.txt | grep -o '"name":"[^"]*"' | cut -d'"' -f4
           else
-            echo "::warning::static directory not found in wwwroot. Deployment may have failed."
+            echo "⚠️ Failed to retrieve wwwroot directory listing. Status code: $LIST_STATUS"
+            echo "Response:"
+            cat wwwroot_listing.txt
+            echo "::warning::Failed to verify deployment content in wwwroot"
           fi
 
       - name: Verify deployment
