@@ -20,12 +20,19 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '22.x'
+          node-version: '20.x'
 
       - name: Install dependencies and build
         run: |
           npm install
           npm run build
+          
+          # Check if build directory exists and has content
+          if [ ! -d "build" ] || [ -z "$(ls -A build)" ]; then
+            echo "::error::Build directory is empty or does not exist. Build may have failed."
+            exit 1
+          fi
+          echo "Build completed successfully. Content verified in build directory."
 
       - name: Run tests (optional)
         run: echo "No tests configured. Skipping..."
@@ -59,6 +66,7 @@ jobs:
       - name: Create health endpoint for Azure App Service
         run: |
           echo "OK" > build/health
+          # health.html 파일은 public 폴더에서 자동으로 build 폴더로 복사됩니다.
 
       - name: Create staticwebapp.config.json for SPA routing
         run: |
@@ -68,6 +76,10 @@ jobs:
               "exclude": ["/static/*", "/images/*", "/*.{png,jpg,gif,ico,css,js}"]
             },
             "routes": [
+              {
+                "route": "/health",
+                "serve": "/health.html"
+              },
               {
                 "route": "/*",
                 "serve": "/index.html",
@@ -85,6 +97,7 @@ jobs:
           allow-no-subscriptions: true
 
       - name: Deploy to Azure Web App
+        id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'taxcredit-visual'
@@ -101,10 +114,18 @@ jobs:
           HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://taxcredit-visual.azurewebsites.net/health)
           echo "Health endpoint status: $HTTP_STATUS"
           
-          if [ "$HTTP_STATUS" == "200" ]; then
+          # Additional checks for static resources
+          INDEX_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://taxcredit-visual.azurewebsites.net/index.html)
+          echo "Index.html status: $INDEX_STATUS"
+          
+          STATIC_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://taxcredit-visual.azurewebsites.net/static)
+          echo "Static directory status: $STATIC_STATUS"
+          
+          if [ "$HTTP_STATUS" == "200" ] && [ "$INDEX_STATUS" == "200" ]; then
             echo "✅ Deployment successful! App is accessible."
           else
             echo "⚠️ App might not be fully accessible yet. Please check manually."
+            echo "::warning::App deployment validation didn't fully pass. Manual verification recommended."
           fi
 
       - name: Deployment summary
