@@ -136,12 +136,26 @@ jobs:
       - name: Manual deployment using Kudu API
         run: |
           echo "Extracting credentials from publish profile..."
-          # PublishProfile에서 정보 추출
-          KUDU_URL=$(echo "${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}" | grep -o 'publishUrl="[^"]*"' | cut -d'"' -f2 | sed 's|:443||')
+          # PublishProfile에서 정보 추출 로직 개선
+          PUBLISH_URL_RAW=$(echo "${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}" | grep -o 'publishUrl="[^"]*"' | cut -d'"' -f2)
+          echo "Raw publishUrl: $PUBLISH_URL_RAW"
+          
+          # URL 파싱 개선 - 도메인 부분만 정확히 추출
+          if [[ $PUBLISH_URL_RAW == *"://"* ]]; then
+            # URL에 프로토콜이 포함된 경우
+            KUDU_DOMAIN=$(echo "$PUBLISH_URL_RAW" | sed -E 's|^https?://||' | sed 's|:443||' | sed 's|/$||')
+          else
+            # URL에 프로토콜이 없는 경우
+            KUDU_DOMAIN=$(echo "$PUBLISH_URL_RAW" | sed 's|:443||' | sed 's|/$||')
+          fi
+          
+          # 최종 Kudu API URL 구성
+          KUDU_API_URL="https://${KUDU_DOMAIN}/api/zipdeploy"
+          echo "Processed Kudu domain: $KUDU_DOMAIN"
+          echo "Final Kudu API URL: $KUDU_API_URL"
+          
           USERNAME=$(echo "${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}" | grep -o 'userName="[^"]*"' | cut -d'"' -f2)
           PASSWORD=$(echo "${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}" | grep -o 'userPWD="[^"]*"' | cut -d'"' -f2)
-          
-          echo "Kudu URL: https://$KUDU_URL (Username will be masked)"
           
           echo "Preparing for ZIP deployment via Kudu API..."
           ZIP_SIZE=$(du -h build.zip | cut -f1)
@@ -151,9 +165,9 @@ jobs:
           unzip -l build.zip | head -10
           
           echo "===== Running ZIP deployment via Kudu API ====="
-          # --fail 플래그 제거하고 더 상세한 출력 설정
+          # curl 명령 수정 - URL 변수 참조 방식 변경
           HTTP_CODE=$(curl --output response.txt --write-out "%{http_code}" --silent --show-error \
-            -X POST "https://$KUDU_URL/api/zipdeploy" \
+            -X POST "$KUDU_API_URL" \
             -u "$USERNAME:$PASSWORD" \
             -H "Content-Type: application/zip" \
             --data-binary @build.zip)
@@ -204,9 +218,13 @@ jobs:
           sleep 60
           
           echo "Verifying deployment..."
-          # 디렉토리 조회 명령도 개선
+          # 디렉토리 조회 명령 URL도 변수 참조 방식 변경
+          # 최종 Kudu API URL에서 디렉토리 경로로 수정
+          KUDU_VFS_URL="https://${KUDU_DOMAIN}/api/vfs/site/wwwroot/"
+          echo "Kudu VFS URL: $KUDU_VFS_URL"
+          
           LIST_CODE=$(curl --output wwwroot_listing.txt --write-out "%{http_code}" --silent --show-error \
-            "https://$KUDU_URL/api/vfs/site/wwwroot/" \
+            "$KUDU_VFS_URL" \
             -u "$USERNAME:$PASSWORD" \
             -H "Accept: application/json")
           
