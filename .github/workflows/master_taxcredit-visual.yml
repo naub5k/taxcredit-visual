@@ -144,47 +144,105 @@ jobs:
           echo "Kudu URL: https://$KUDU_URL (Username will be masked)"
           
           echo "Preparing for ZIP deployment via Kudu API..."
-          echo "ZIP file size: $(du -h build.zip | cut -f1)"
+          ZIP_SIZE=$(du -h build.zip | cut -f1)
+          ZIP_BYTES=$(du -b build.zip | cut -f1)
+          echo "ZIP file size: $ZIP_SIZE ($ZIP_BYTES bytes)"
+          echo "ZIP file contents (first 10 entries):"
+          unzip -l build.zip | head -10
           
-          echo "Running ZIP deployment via Kudu API..."
-          HTTP_STATUS=$(curl -s -w "%{http_code}" -o kudu_response.txt -X POST \
-            "https://$KUDU_URL/api/zipdeploy" \
+          echo "===== Running ZIP deployment via Kudu API ====="
+          # --fail 플래그 제거하고 더 상세한 출력 설정
+          HTTP_CODE=$(curl --output response.txt --write-out "%{http_code}" --silent --show-error \
+            -X POST "https://$KUDU_URL/api/zipdeploy" \
             -u "$USERNAME:$PASSWORD" \
             -H "Content-Type: application/zip" \
             --data-binary @build.zip)
           
-          echo "Kudu API response status code: $HTTP_STATUS"
+          CURL_EXIT_CODE=$?
+          echo "curl exit code: $CURL_EXIT_CODE"
+          echo "HTTP response code: $HTTP_CODE"
           
-          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
-            echo "✅ Deployment successful with status code: $HTTP_STATUS"
+          echo "Response body (first 50 lines):"
+          if [ -s response.txt ]; then
+            cat response.txt | head -50
           else
-            echo "⚠️ Deployment may have failed. Status code: $HTTP_STATUS"
-            echo "Response from Kudu API:"
-            cat kudu_response.txt
-            # 실패해도 계속 진행
-            echo "::warning::Deployment via Kudu API returned unexpected status code: $HTTP_STATUS"
+            echo "(Empty response body)"
+          fi
+          
+          # curl exit code 분석
+          if [ $CURL_EXIT_CODE -ne 0 ]; then
+            echo "curl error code $CURL_EXIT_CODE 의미:"
+            case $CURL_EXIT_CODE in
+              1) echo "Unsupported protocol" ;;
+              3) echo "URL malformed" ;;
+              5) echo "Couldn't resolve proxy" ;;
+              6) echo "Couldn't resolve host" ;;
+              7) echo "Failed to connect to host" ;;
+              22) echo "HTTP page not retrieved" ;;
+              26) echo "Read error" ;;
+              27) echo "Out of memory" ;;
+              28) echo "Operation timeout" ;;
+              35) echo "SSL connect error" ;;
+              47) echo "Too many redirects" ;;
+              51) echo "The peer certificate cannot be authenticated with known CA certificates" ;;
+              52) echo "The server didn't reply anything" ;;
+              53) echo "SSL crypto engine not found" ;;
+              *) echo "Unknown curl error" ;;
+            esac
+            echo "::warning::cURL failed with exit code $CURL_EXIT_CODE"
+          fi
+          
+          # HTTP 상태 코드 분석
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+            echo "✅ Deployment successful with HTTP status code: $HTTP_CODE"
+          else
+            echo "⚠️ Deployment may have failed. HTTP status code: $HTTP_CODE"
+            echo "::warning::Deployment via Kudu API returned unexpected HTTP code: $HTTP_CODE"
           fi
           
           echo "Waiting for deployment to complete and files to be accessible..."
           sleep 60
           
           echo "Verifying deployment..."
-          LIST_STATUS=$(curl -s -w "%{http_code}" -o wwwroot_listing.txt \
+          # 디렉토리 조회 명령도 개선
+          LIST_CODE=$(curl --output wwwroot_listing.txt --write-out "%{http_code}" --silent --show-error \
             "https://$KUDU_URL/api/vfs/site/wwwroot/" \
             -u "$USERNAME:$PASSWORD" \
             -H "Accept: application/json")
           
-          echo "Kudu API listing status code: $LIST_STATUS"
+          LIST_EXIT_CODE=$?
+          echo "curl exit code for directory listing: $LIST_EXIT_CODE"
+          echo "HTTP response code for directory listing: $LIST_CODE"
           
-          if [ "$LIST_STATUS" -ge 200 ] && [ "$LIST_STATUS" -lt 300 ]; then
+          if [ $LIST_EXIT_CODE -ne 0 ]; then
+            echo "⚠️ Failed to list directory. curl exit code: $LIST_EXIT_CODE"
+            echo "::warning::Directory listing failed with curl exit code $LIST_EXIT_CODE"
+          elif [ "$LIST_CODE" -ge 200 ] && [ "$LIST_CODE" -lt 300 ]; then
             echo "✅ Successfully retrieved wwwroot directory listing"
-            echo "Files in /site/wwwroot:"
-            cat wwwroot_listing.txt | grep -o '"name":"[^"]*"' | cut -d'"' -f4
+            echo "Files in /site/wwwroot (JSON raw response, first 10 lines):"
+            cat wwwroot_listing.txt | head -10
+            echo "Extracted file names:"
+            cat wwwroot_listing.txt | grep -o '"name":"[^"]*"' | cut -d'"' -f4 | sort
+            
+            # 특정 필수 파일 확인
+            if cat wwwroot_listing.txt | grep -q '"name":"index.html"'; then
+              echo "✅ index.html found in wwwroot"
+            else
+              echo "⚠️ index.html NOT found in wwwroot"
+              echo "::warning::index.html not found in wwwroot. Deployment may have failed."
+            fi
+            
+            if cat wwwroot_listing.txt | grep -q '"name":"static"'; then
+              echo "✅ static directory found in wwwroot"
+            else
+              echo "⚠️ static directory NOT found in wwwroot"
+              echo "::warning::static directory not found in wwwroot. Deployment may have failed."
+            fi
           else
-            echo "⚠️ Failed to retrieve wwwroot directory listing. Status code: $LIST_STATUS"
+            echo "⚠️ Failed to retrieve wwwroot directory listing. HTTP status code: $LIST_CODE"
             echo "Response:"
             cat wwwroot_listing.txt
-            echo "::warning::Failed to verify deployment content in wwwroot"
+            echo "::warning::Failed to verify deployment content in wwwroot. HTTP code: $LIST_CODE"
           fi
 
       - name: Verify deployment
