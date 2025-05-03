@@ -18,7 +18,7 @@
                          "web-vitals":  "^2.1.4"
                      },
     "scripts":  {
-                    "build":  "npx react-scripts build",
+                    "build":  "node ./node_modules/.bin/react-scripts build",
                     "deploy":  "\"D:\\Program Files\\Git\\cmd\\git.exe\" push azure HEAD:master",
                     "start":  "npx react-scripts start",
                     "prebuild": "echo \"사전 빌드 검증 중...\"",
