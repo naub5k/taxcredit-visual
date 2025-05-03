@@ -24,9 +24,14 @@ jobs:
         with:
           node-version: '20.x'
 
-      - name: Install dependencies and build
+      - name: Install dependencies
+        run: npm install
+
+      - name: Fix react-scripts permission
+        run: chmod +x ./node_modules/.bin/react-scripts
+
+      - name: Build
         run: |
-          npm install
           npm run build
           
           # Check if build directory exists and has content
