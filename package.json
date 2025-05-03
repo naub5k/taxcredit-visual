@@ -18,7 +18,7 @@
                          "web-vitals":  "^2.1.4"
                      },
     "scripts":  {
-                    "build":  "node ./node_modules/.bin/react-scripts build",
+                    "build":  "react-scripts build",
                     "deploy":  "\"D:\\Program Files\\Git\\cmd\\git.exe\" push azure HEAD:master",
                     "start":  "react-scripts start"
                 },
