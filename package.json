@@ -18,9 +18,9 @@
                          "web-vitals":  "^2.1.4"
                      },
     "scripts":  {
-                    "build":  "react-scripts build",
+                    "build":  "npx react-scripts build",
                     "deploy":  "\"D:\\Program Files\\Git\\cmd\\git.exe\" push azure HEAD:master",
-                    "start":  "react-scripts start",
+                    "start":  "npx react-scripts start",
                     "prebuild": "echo \"사전 빌드 검증 중...\"",
                     "postbuild": "echo \"빌드 후 검증 중...\" && node scripts/verify-build.js",
                     "verify-build": "node scripts/verify-build.js"
