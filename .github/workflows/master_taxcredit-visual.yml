@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - master
+      - query-integration
   workflow_dispatch:
 
 permissions:
@@ -28,7 +29,10 @@ jobs:
         run: npm install
 
       - name: Fix react-scripts permission
-        run: chmod +x ./node_modules/.bin/react-scripts
+        run: |
+          chmod +x ./node_modules/.bin/react-scripts
+          echo "✅ Permissions set for react-scripts"
+          ls -la ./node_modules/.bin/react-scripts
 
       - name: Build
         run: |
