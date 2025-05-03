@@ -20,10 +20,7 @@
     "scripts":  {
                     "build":  "node ./node_modules/.bin/react-scripts build",
                     "deploy":  "\"D:\\Program Files\\Git\\cmd\\git.exe\" push azure HEAD:master",
-                    "start":  "npx react-scripts start",
-                    "prebuild": "echo \"사전 빌드 검증 중...\"",
-                    "postbuild": "echo \"빌드 후 검증 중...\" && node scripts/verify-build.js",
-                    "verify-build": "node scripts/verify-build.js"
+                    "start":  "react-scripts start"
                 },
     "eslintConfig":  {
                          "extends":  [
