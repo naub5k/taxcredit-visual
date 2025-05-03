@@ -1,0 +1,22 @@
+{
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "editor.tabSize": 2,
+  "files.exclude": {
+    "node_modules": true,
+    ".DS_Store": true,
+    ".env.local": true,
+    ".env.development.local": true,
+    ".env.test.local": true,
+    ".env.production.local": true,
+    "npm-debug.log*": true,
+    "yarn-debug.log*": true,
+    "yarn-error.log*": true
+  },
+  "search.exclude": {
+    "node_modules": true,
+    "build": true
+  }
+} 

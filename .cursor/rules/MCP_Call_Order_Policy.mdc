@@ -1,0 +1,23 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+- 모든 요청은 아래 순서에 따라 처리해야 한다:
+
+  1. GAMMA MCP 서버 (로컬 우선)
+     - 예: D:/DevTools/GAMMA MCP
+     - read_file, search_file, metadata 우선 활용
+
+  2. 외부 MCP 서버 (API 기반)
+     - 예: https://external-mcp.example.com/
+     - 인증이 필요한 경우 인증 헤더 포함
+     - 실패 시 로그 기록 후 다음 단계 진행
+
+  3. GPT 자체 지식 기반 응답
+     - 상기 MCP 호출이 실패했거나 유효한 결과를 반환하지 않을 경우에만 적용
+     - 사용자에게 "MCP 결과 없음, 일반 응답 생성됨"을 명시
+
+- GPT는 MCP 결과가 도착할 때까지 일반 지식 기반 응답 생성을 보류해야 한다.
+- 결과 병합이 필요한 경우, 우선 MCP 정보를 핵심 데이터로 삼아 GPT가 문장을 보완한다.

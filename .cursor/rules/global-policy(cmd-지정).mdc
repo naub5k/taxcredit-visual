@@ -1,0 +1,59 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Global Policy for Cursor & GPT
+
+> 이 문서는 MCP 우선 호출, 기본 행동 규범, GPT/Cursor 협업 원칙을 통합 정의합니다.
+
+---
+
+## 🧭 1. MCP 우선 호출 정책
+
+- 1차: GAMMA MCP
+- 2차: 외부 MCP
+- 3차: GPT 자체 지식 기반
+
+## 📏 2. 기본 행동 지침 (Global Base Rule)
+
+- 명확한 코드
+- 중첩/추상화 금지
+- API/DB/파일 I/O는 항상 예외 처리
+
+## 🧠 3. GPT vs Cursor 역할 정의
+
+### 🔹 GPT
+
+- 구조 설계
+- 흐름 기억
+- 프롬프트 생성
+
+### 🔹 Cursor
+
+- 실행자 역할
+- 파일/디렉토리/스크립트 조작
+- 판단하지 않음, 프롬프트에만 반응
+
+## 🔖 4. 협업 규칙 요약
+
+- 역할 분리 유지
+- 철학 → 실행으로 이어지는 명확한 흐름
+
+# GPT와 Cursor의 응답 흐름 기준 – 워크플로우 참조 규칙
+
+- 모든 시스템 실행 흐름과 관련된 질문 또는 작업 요청은  
+  반드시 `.cursor/workflows/GPT_Cursor_Workflow_Pipeline.md` 문서를 참조한 후 판단한다.
+
+- 문서 내 각 단계별 흐름, 개선 주석, 템플릿 구조 등을 기준으로  
+  GPT는 판단을 설계하고, Cursor는 실행을 수행한다.
+
+- GPT는 사용자 요청이 애매할 경우에도  
+  해당 문서를 기반으로 "이 요청은 어떤 단계에 해당하는가?"를 먼저 판단하고,  
+  그에 맞는 실행 방식을 제안한다.
+
+- Cursor는 해당 문서에서 정의된 `templates` 항목을 참조하여  
+  명령어 또는 작업 구조를 적용한다.
+shell: cmd
+terminal: cmd
+fallbackShell: powershell
