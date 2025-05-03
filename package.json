@@ -6,6 +6,7 @@
     "engines": {
         "node": ">=18 <=20"
     },
+    "main": "server.js",
     "dependencies":  {
                          "@testing-library/dom":  "^9.3.4",
                          "@testing-library/jest-dom":  "^6.4.2",
@@ -21,8 +22,9 @@
     "scripts":  {
                     "build":  "react-scripts build",
                     "deploy":  "\"D:\\Program Files\\Git\\cmd\\git.exe\" push azure HEAD:master",
-                    "start":  "react-scripts start",
-                    "serve": "node build/serve.js"
+                    "start":  "node server.js",
+                    "serve": "node build/serve.js",
+                    "dev": "react-scripts start"
                 },
     "eslintConfig":  {
                          "extends":  [
