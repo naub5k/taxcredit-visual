@@ -22,4 +22,4 @@ jobs:
           action: "upload"
           app_location: "my-app"
           api_location: ""
-          output_location: "my-app/build"
+          output_location: "build"
