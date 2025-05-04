@@ -40,9 +40,9 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_AGREEABLE_SEA_067D69D00 }}
           repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
           action: "upload"
-          app_location: "."          # GitHub Actions 내 현재 디렉토리 기준          
+          app_location: "."              # ✅ 수정
           api_location: "" # Api source code path - optional
-          output_location: "build" # Built app content directory - optional
+          output_location: "build"       # ✅ 수정 (my-app 제외)
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
