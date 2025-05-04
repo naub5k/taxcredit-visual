@@ -91,19 +91,19 @@ const RegionSelector = ({ onRegionChange }) => {
   };
 
   return (
-    <div className="region-selector bg-white rounded-lg shadow-md p-4 mb-6">
-      <h2 className="text-xl font-bold mb-4 text-gray-800">지역별 고용이력 현황</h2>
+    <div className="region-selector bg-white rounded-lg shadow-md p-3 mb-4">
+      <h2 className="text-xl font-bold mb-2 text-gray-800">지역별 고용이력 현황</h2>
       
       {/* 시도/구군 선택 영역 */}
-      <div className={`${isMobile ? 'flex flex-col' : 'grid grid-cols-2 gap-4'}`}>
+      <div className={`${isMobile ? 'flex flex-col space-y-2' : 'grid grid-cols-2 gap-3'}`}>
         {/* 시도 선택 */}
-        <div className="mb-4">
-          <label htmlFor="state-select" className="block text-gray-700 font-medium mb-2">
+        <div className="mb-2">
+          <label htmlFor="state-select" className="block text-gray-700 font-medium mb-1 text-sm">
             시/도 선택
           </label>
           <select
             id="state-select"
-            className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             value={selectedState}
             onChange={handleStateChange}
           >
@@ -118,13 +118,13 @@ const RegionSelector = ({ onRegionChange }) => {
 
         {/* 구군 선택 (시도 선택 시에만 표시) */}
         {selectedState && (
-          <div className="mb-4">
-            <label htmlFor="district-select" className="block text-gray-700 font-medium mb-2">
+          <div className="mb-2">
+            <label htmlFor="district-select" className="block text-gray-700 font-medium mb-1 text-sm">
               구/군 선택
             </label>
             <select
               id="district-select"
-              className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               value={selectedDistrict}
               onChange={handleDistrictChange}
             >
@@ -141,9 +141,9 @@ const RegionSelector = ({ onRegionChange }) => {
 
       {/* 선택된 지역 정보 표시 */}
       {selectedState && (
-        <div className="mt-6 bg-gray-50 p-4 rounded-lg">
+        <div className="mt-3 bg-gray-50 p-3 rounded-lg">
           <h3 className="text-lg font-semibold mb-2 text-gray-800">선택된 지역 정보</h3>
-          <div className={`${isMobile ? 'grid grid-cols-1 gap-3' : 'grid grid-cols-2 gap-4'}`}>
+          <div className={`${isMobile ? 'grid grid-cols-2 gap-2 text-sm' : 'grid grid-cols-2 gap-3'}`}>
             <div>
               <p className="text-gray-600">시/도:</p>
               <p className="font-medium">{selectedState}</p>
@@ -162,7 +162,7 @@ const RegionSelector = ({ onRegionChange }) => {
                   <p className="text-gray-600">해당 구/군 업체 수:</p>
                   <p className="font-medium">{selectedCompanyCount.toLocaleString()}개</p>
                 </div>
-                <div className={isMobile ? "col-span-1" : "col-span-2"}>
+                <div className={isMobile ? "col-span-2" : "col-span-2"}>
                   <p className="text-gray-600">비율:</p>
                   <p className="font-medium">{calculateRatio()}%</p>
                 </div>
@@ -174,14 +174,14 @@ const RegionSelector = ({ onRegionChange }) => {
 
       {/* 비주얼 인디케이터 */}
       {selectedDistrict && (
-        <div className="mt-4">
-          <div className="w-full bg-gray-200 rounded-full h-4">
+        <div className="mt-3">
+          <div className="w-full bg-gray-200 rounded-full h-3">
             <div 
-              className="bg-blue-600 h-4 rounded-full" 
+              className="bg-blue-600 h-3 rounded-full" 
               style={{ width: `${calculateRatio()}%` }}
             ></div>
           </div>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-xs text-gray-600 mt-1">
             {selectedDistrict}의 {selectedState} 내 비율: {calculateRatio()}%
           </p>
         </div>
