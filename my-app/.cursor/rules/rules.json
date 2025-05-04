@@ -1,0 +1,9 @@
+{
+  "$schema": "https://raw.githubusercontent.com/cursor-sh/cursor/main/rules.schema.json",
+  "global": {
+    "shell": "cmd",
+    "terminal": "cmd",
+    "fallbackShell": "powershell"
+  },
+  "rules": []
+}

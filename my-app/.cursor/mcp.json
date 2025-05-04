@@ -1,0 +1,38 @@
+{
+    "mcpServers": {
+      "sqlServer": {
+        "type": "mssql", 
+        "command": "sqlcmd",
+        "config": {
+          "server": "NAUB5K",
+          "database": "CleanDB",
+          "options": {
+            "encrypt": true,
+            "trustServerCertificate": true,
+            "trustedConnection": true,
+            "integratedSecurity": true
+          }
+        }
+      },
+      "GAMMA Core": {
+        "name": "GAMMA Core",
+        "description": "GPT + Assistant + Modular Management Architecture", 
+        "command": "node D:/DevTools/GAMMA/server.js",
+        "url": "http://localhost:7861"
+      },
+      "azureSqlServer": {
+        "type": "mssql",
+        "command": "mssql", 
+        "config": {
+          "server": "naub5k.database.windows.net",
+          "database": "CleanDB",
+          "user": "naub5k",
+          "password": "dunkin3106UB!",
+          "options": {
+            "encrypt": true,
+            "trustServerCertificate": false
+          }
+        }
+      }
+    }
+}
