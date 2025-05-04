@@ -1,17 +1,11 @@
 {
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/static/*", "/images/*", "/*.{png,jpg,gif,ico,css,js}"]
+    "exclude": ["/api/*", "/assets/*", "/*.{css,js,png,jpg,gif,ico,svg,json}"]
   },
-  "routes": [
-    {
-      "route": "/health",
-      "serve": "/health.html"
-    },
-    {
-      "route": "/*",
-      "serve": "/index.html",
-      "statusCode": 200
+  "responseOverrides": {
+    "404": {
+      "rewrite": "/index.html"
     }
-  ]
-} 
+  }
+}
