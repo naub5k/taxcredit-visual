@@ -91,19 +91,19 @@ const RegionSelector = ({ onRegionChange }) => {
   };
 
   return (
-    <div className="region-selector bg-white rounded-lg shadow-md p-3 mb-4">
-      <h2 className="text-xl font-bold mb-2 text-gray-800">지역별 고용이력 현황</h2>
+    <div className="region-selector bg-white rounded-lg shadow-md p-4">
+      <h2 className="text-xl font-bold mb-3 text-gray-800">지역별 상세 조회</h2>
       
       {/* 시도/구군 선택 영역 */}
-      <div className={`${isMobile ? 'flex flex-col space-y-2' : 'grid grid-cols-2 gap-3'}`}>
+      <div className={`${isMobile ? 'flex flex-col space-y-2' : 'grid grid-cols-2 gap-4'}`}>
         {/* 시도 선택 */}
-        <div className="mb-2">
+        <div className="mb-3">
           <label htmlFor="state-select" className="block text-gray-700 font-medium mb-1 text-sm">
             시/도 선택
           </label>
           <select
             id="state-select"
-            className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             value={selectedState}
             onChange={handleStateChange}
           >
@@ -118,13 +118,13 @@ const RegionSelector = ({ onRegionChange }) => {
 
         {/* 구군 선택 (시도 선택 시에만 표시) */}
         {selectedState && (
-          <div className="mb-2">
+          <div className="mb-3">
             <label htmlFor="district-select" className="block text-gray-700 font-medium mb-1 text-sm">
               구/군 선택
             </label>
             <select
               id="district-select"
-              className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               value={selectedDistrict}
               onChange={handleDistrictChange}
             >
@@ -141,30 +141,30 @@ const RegionSelector = ({ onRegionChange }) => {
 
       {/* 선택된 지역 정보 표시 */}
       {selectedState && (
-        <div className="mt-3 bg-gray-50 p-3 rounded-lg">
-          <h3 className="text-lg font-semibold mb-2 text-gray-800">선택된 지역 정보</h3>
-          <div className={`${isMobile ? 'grid grid-cols-2 gap-2 text-sm' : 'grid grid-cols-2 gap-3'}`}>
-            <div>
-              <p className="text-gray-600">시/도:</p>
-              <p className="font-medium">{selectedState}</p>
+        <div className="mt-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
+          <h3 className="text-lg font-semibold mb-3 text-gray-800 border-b pb-2">선택된 지역 정보</h3>
+          <div className={`${isMobile ? 'grid grid-cols-2 gap-3 text-sm' : 'grid grid-cols-2 gap-4'}`}>
+            <div className="bg-white p-3 rounded-md shadow-sm">
+              <p className="text-gray-600 text-sm">시/도:</p>
+              <p className="font-medium text-lg">{selectedState}</p>
             </div>
-            <div>
-              <p className="text-gray-600">전체 업체 수:</p>
-              <p className="font-medium">{stateCompanyCount.toLocaleString()}개</p>
+            <div className="bg-white p-3 rounded-md shadow-sm">
+              <p className="text-gray-600 text-sm">전체 업체 수:</p>
+              <p className="font-medium text-lg text-blue-600">{stateCompanyCount.toLocaleString()}개</p>
             </div>
             {selectedDistrict && (
               <>
-                <div>
-                  <p className="text-gray-600">선택된 구/군:</p>
-                  <p className="font-medium">{selectedDistrict}</p>
+                <div className="bg-white p-3 rounded-md shadow-sm">
+                  <p className="text-gray-600 text-sm">선택된 구/군:</p>
+                  <p className="font-medium text-lg">{selectedDistrict}</p>
                 </div>
-                <div>
-                  <p className="text-gray-600">해당 구/군 업체 수:</p>
-                  <p className="font-medium">{selectedCompanyCount.toLocaleString()}개</p>
+                <div className="bg-white p-3 rounded-md shadow-sm">
+                  <p className="text-gray-600 text-sm">해당 구/군 업체 수:</p>
+                  <p className="font-medium text-lg text-green-600">{selectedCompanyCount.toLocaleString()}개</p>
                 </div>
-                <div className={isMobile ? "col-span-2" : "col-span-2"}>
-                  <p className="text-gray-600">비율:</p>
-                  <p className="font-medium">{calculateRatio()}%</p>
+                <div className={`${isMobile ? "col-span-2" : "col-span-2"} bg-white p-3 rounded-md shadow-sm`}>
+                  <p className="text-gray-600 text-sm">시/도 내 비율:</p>
+                  <p className="font-medium text-lg text-purple-600">{calculateRatio()}%</p>
                 </div>
               </>
             )}
@@ -174,16 +174,18 @@ const RegionSelector = ({ onRegionChange }) => {
 
       {/* 비주얼 인디케이터 */}
       {selectedDistrict && (
-        <div className="mt-3">
-          <div className="w-full bg-gray-200 rounded-full h-3">
+        <div className="mt-4">
+          <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
             <div 
-              className="bg-blue-600 h-3 rounded-full" 
+              className="bg-blue-600 h-3 rounded-full transition-all duration-500" 
               style={{ width: `${calculateRatio()}%` }}
             ></div>
           </div>
-          <p className="text-xs text-gray-600 mt-1">
-            {selectedDistrict}의 {selectedState} 내 비율: {calculateRatio()}%
-          </p>
+          <div className="flex justify-between text-xs text-gray-600 mt-1">
+            <span>0%</span>
+            <span>{selectedDistrict}의 {selectedState} 내 비율: {calculateRatio()}%</span>
+            <span>100%</span>
+          </div>
         </div>
       )}
     </div>

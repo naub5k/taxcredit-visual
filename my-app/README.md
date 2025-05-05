@@ -27,7 +27,7 @@ npm run build
 ```
 
 ## 데이터 소스
-- CleanDB.dbo.Insu_Clean
+- [CleanDB].CleanDB.dbo.Insu_Clean
 
 ## 배포 정보
 배포 관련 상세 정보는 `DEPLOYMENT.md` 파일을 참조하세요. 
