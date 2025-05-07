@@ -1,0 +1,14 @@
+{
+  "name": "taxcredit-api",
+  "version": "1.0.0",
+  "description": "Azure Functions API for Taxcredit Mobile App",
+  "scripts": {
+    "start": "func start"
+  },
+  "dependencies": {
+    "mssql": "^7.3.5"
+  },
+  "devDependencies": {
+    "azure-functions-core-tools": "^4.0.5455"
+  }
+} 
