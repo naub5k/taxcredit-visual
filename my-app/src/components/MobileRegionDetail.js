@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import PartnerModal from './PartnerModal';
 
 /**
  * 모바일 환경에서 선택된 지역의 상세 정보를 전체 화면으로 표시하는 컴포넌트
@@ -13,6 +14,8 @@ const MobileRegionDetail = ({ regionData, onBack, getRegionTitle }) => {
   const [selectedDistrict, setSelectedDistrict] = useState(null);
   // 상단 요약 정보 영역에 대한 ref
   const topSummaryRef = useRef(null);
+  // 파트너 모달 상태
+  const [showPartnerModal, setShowPartnerModal] = useState(false);
   
   // 데이터 처리 및 초기 선택 설정을 위한 useEffect
   useEffect(() => {
@@ -66,6 +69,16 @@ const MobileRegionDetail = ({ regionData, onBack, getRegionTitle }) => {
         }
       }
     }
+  };
+
+  // 파트너 모달 띄우기
+  const handleShowPartnerModal = () => {
+    setShowPartnerModal(true);
+  };
+
+  // 파트너 모달 닫기
+  const handleClosePartnerModal = () => {
+    setShowPartnerModal(false);
   };
 
   // 차트 높이 계산 함수 (데이터 개수에 따라 동적 조정)
@@ -138,11 +151,17 @@ const MobileRegionDetail = ({ regionData, onBack, getRegionTitle }) => {
                   </p>
                 </div>
                 
-                <div className="bg-green-50 p-3 rounded-lg">
+                <div 
+                  className="bg-green-50 p-3 rounded-lg cursor-pointer hover:bg-green-100 transition-colors"
+                  onClick={handleShowPartnerModal}
+                >
                   <h3 className="font-medium text-gray-500 text-sm">해당 구/군 업체 수:</h3>
-                  <p className="text-lg font-bold text-green-700">
-                    {selectedDistrict.업체수.toLocaleString()}개
-                  </p>
+                  <div className="flex justify-between items-center">
+                    <p className="text-lg font-bold text-green-700">
+                      {selectedDistrict.업체수.toLocaleString()}개
+                    </p>
+                    <span className="text-xs bg-green-700 text-white px-2 py-1 rounded">상세보기</span>
+                  </div>
                 </div>
               </>
             )}
@@ -162,6 +181,18 @@ const MobileRegionDetail = ({ regionData, onBack, getRegionTitle }) => {
                 업체가 있습니다.</>
               )}
             </p>
+          </div>
+
+          {/* 파트너 서비스 영역 */}
+          <div className="bg-purple-50 rounded-lg p-3 flex justify-between items-center cursor-pointer hover:bg-purple-100 transition-colors"
+               onClick={handleShowPartnerModal}>
+            <div>
+              <h3 className="font-medium text-gray-700">상세 정보 조회</h3>
+              <p className="text-sm text-gray-600">전체 사업장 목록 확인</p>
+            </div>
+            <div className="text-purple-700 font-bold">
+              파트너 전용 &gt;
+            </div>
           </div>
         </div>
 
@@ -212,6 +243,14 @@ const MobileRegionDetail = ({ regionData, onBack, getRegionTitle }) => {
           <p className="text-sm">© 2025 고용이력부 시스템 | 데이터 출처: 덕율세무회계사무소</p>
         </div>
       </footer>
+
+      {/* 파트너 모달 */}
+      <PartnerModal 
+        isOpen={showPartnerModal} 
+        onClose={handleClosePartnerModal} 
+        sido={regionName}
+        gugun={selectedDistrict ? selectedDistrict.name : ''}
+      />
     </div>
   );
 };

@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import RegionSelector from './components/RegionSelector';
 import RegionChart from './components/RegionChart';
 import MobileRegionDetail from './components/MobileRegionDetail';
+import RegionDetailPage from './components/RegionDetailPage';
 import './App.css';
 import { regionGroups } from './data/employmentRegionData';
 
-function App() {
+// 메인 앱 컴포넌트
+function AppContent() {
   const [selectedRegion, setSelectedRegion] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
   const [selectedChartData, setSelectedChartData] = useState(null);
@@ -184,11 +187,12 @@ function App() {
                   {((selectedRegion.업체수 / selectedRegion.시도업체수) * 100).toFixed(2)}%
                 </p>
               </div>
-              <div className="bg-purple-50 p-3 rounded-lg">
+              <div className="bg-purple-50 p-3 rounded-lg cursor-pointer hover:bg-purple-100 transition-colors">
                 <h3 className="font-medium text-gray-700">상세 정보 조회</h3>
-                <p className="text-xl md:text-2xl font-bold text-purple-700">
-                  파트너 전용준비 중...
-                </p>
+                <div className="flex justify-between items-center">
+                  <p className="text-purple-700 font-bold">파트너 전용</p>
+                  <span className="text-xs bg-purple-700 text-white px-2 py-1 rounded">준비중</span>
+                </div>
               </div>
             </div>
           </div>
@@ -206,6 +210,18 @@ function App() {
         </div>
       </footer>
     </div>
+  );
+}
+
+// 앱의 라우팅 설정
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<AppContent />} />
+        <Route path="/region-detail" element={<RegionDetailPage />} />
+      </Routes>
+    </Router>
   );
 }
 

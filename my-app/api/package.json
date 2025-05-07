@@ -1,14 +1,20 @@
 {
   "name": "taxcredit-api",
   "version": "1.0.0",
-  "description": "Azure Functions API for Taxcredit Mobile App",
+  "description": "세액공제 조회 API 함수",
+  "main": "index.js",
   "scripts": {
     "start": "func start"
   },
+  "engines": {
+    "node": ">=14"
+  },
   "dependencies": {
-    "mssql": "^7.3.5"
+    "@azure/msal-node": "^2.2.0",
+    "mssql": "^9.3.2",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "azure-functions-core-tools": "^4.0.5455"
+    "azure-functions-core-tools": "^4.0.5198"
   }
-} 
+}

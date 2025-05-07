@@ -6,7 +6,8 @@
     "DB_SERVER": "naub5k.database.windows.net",
     "DB_USER": "naub5k",
     "DB_PASS": "dunkin3106UB!",
-    "DB_NAME": "CleanDB"
+    "DB_NAME": "CleanDB",
+    "SqlConnectionString": "Server=naub5k.database.windows.net;Database=CleanDB;User Id=naub5k;Password=dunkin3106UB!;Encrypt=true"
   },
   "Host": {
     "CORS": "*",

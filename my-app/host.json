@@ -1,0 +1,10 @@
+{
+  "version": "2.0",
+  "functionTimeout": "00:05:00",
+  "cors": {
+    "allowedOrigins": ["*"],
+    "allowedMethods": ["*"],
+    "allowedHeaders": ["*"],
+    "maxAge": 600
+  }
+}
