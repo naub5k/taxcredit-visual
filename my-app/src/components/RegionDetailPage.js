@@ -20,12 +20,27 @@ function RegionDetailPage() {
         console.log('현재 환경:', process.env.NODE_ENV);
 
         // 환경에 따른 API URL 구성
-        // 개발 환경에서는 localhost:7071 사용, 프로덕션에서는 상대 경로 사용
-        const baseUrl = process.env.NODE_ENV === 'development'
-          ? `http://${window.location.hostname}:7071`
-          : "";
-
-        const apiUrl = `${baseUrl}/api/getsamplelist?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}`;
+        // 개발 환경에서는 localhost:7071 사용
+        // 프로덕션에서는 3가지 방법으로 시도 (Static Web App 상대 경로, 직접 Function URL, CORS 프록시)
+        let apiUrl;
+        
+        if (process.env.NODE_ENV === 'development') {
+          // 개발 환경
+          apiUrl = `http://${window.location.hostname}:7071/api/getsamplelist?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}`;
+        } else {
+          // 프로덕션 환경 - 3가지 방법으로 시도
+          
+          // 방법 1: Azure Static Web App의 API 프록시 사용 (기본)
+          apiUrl = `/api/getsamplelist?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}`;
+          
+          // 방법 2: 직접 Azure Function URL 사용 (API 프록시 실패 시)
+          // apiUrl = `https://taxcredit-api-func.azurewebsites.net/api/getsamplelist?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}`;
+          
+          // 방법 3: CORS 프록시 사용 (직접 호출도 실패할 경우)
+          // const functionUrl = `https://taxcredit-api-func.azurewebsites.net/api/getsamplelist?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}`;
+          // apiUrl = `https://corsproxy.io/?${encodeURIComponent(functionUrl)}`;
+        }
+        
         console.log('API URL:', apiUrl);
 
         // 환경에 따른, CORS 모드 분기 처리
@@ -47,13 +62,41 @@ function RegionDetailPage() {
                 },
               };
         
-        const response = await fetch(apiUrl, fetchOptions);
+        // 응답 시도
+        let response;
+        let responseData;
         
-        if (!response.ok) {
-          throw new Error(`API 응답 실패: ${response.status}`);
+        try {
+          // 첫 번째 방법 시도: 기본 URL로 호출
+          response = await fetch(apiUrl, fetchOptions);
+          
+          if (!response.ok) {
+            console.error(`기본 API 호출 실패 (${response.status}), 대체 방법 시도 중...`);
+            
+            // 방법 2: 직접 Azure Function URL 사용
+            const directUrl = `https://taxcredit-api-func.azurewebsites.net/api/getsamplelist?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}`;
+            console.log('직접 호출 URL 시도:', directUrl);
+            
+            const directResponse = await fetch(directUrl, {
+              ...fetchOptions,
+              mode: 'cors', // 직접 호출 시 CORS 모드 필요
+            });
+            
+            if (directResponse.ok) {
+              response = directResponse;
+            } else {
+              throw new Error(`직접 호출도 실패: ${directResponse.status}`);
+            }
+          }
+          
+          // 성공한 응답에서 데이터 추출
+          responseData = await response.json();
+          
+        } catch (fetchError) {
+          console.error('모든 API 호출 방법 실패:', fetchError);
+          throw fetchError;
         }
         
-        const responseData = await response.json();
         setData(responseData);
         setLoading(false);
       } catch (error) {
