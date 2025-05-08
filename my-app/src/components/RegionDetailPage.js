@@ -20,8 +20,15 @@ function RegionDetailPage() {
         console.log('현재 환경:', process.env.NODE_ENV);
 
         // 환경에 따른 API URL 구성
-        let apiUrl;
-        let fetchOptions = {
+        // 개발 환경에서는 localhost:7071 사용, 프로덕션에서는 상대 경로 사용
+        const baseUrl = process.env.NODE_ENV === 'development'
+          ? `http://${window.location.hostname}:7071`
+          : "";
+
+        const apiUrl = `${baseUrl}/api/getSampleList?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}`;
+        console.log('API URL:', apiUrl);
+
+        const fetchOptions = {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
@@ -29,55 +36,20 @@ function RegionDetailPage() {
           }
         };
 
-        // 현재 접속한 URL에서 호스트 부분 가져오기
-        const currentHost = window.location.hostname;
-        
+        // 개발 환경에서만 CORS 옵션 추가
         if (process.env.NODE_ENV === 'development') {
-          // 개발 환경 (로컬)
-          apiUrl = `http://${currentHost}:7071/api/getSampleList?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}`;
-          fetchOptions.mode = 'cors'; // 로컬만 CORS 필요
-          
-          console.log('개발 환경 API URL:', apiUrl);
-        } else {
-          // 배포 환경 - 3가지 옵션 시도
-          try {
-            // 옵션 1: 직접 호출 (CORS 오류 가능성)
-            const directUrl = `https://taxcredit-api-func.azurewebsites.net/api/getSampleList?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}`;
-            console.log('직접 호출 시도:', directUrl);
-            
-            const directResponse = await fetch(directUrl, {
-              ...fetchOptions,
-              mode: 'cors',
-            });
-            
-            if (directResponse.ok) {
-              const responseData = await directResponse.json();
-              setData(responseData);
-              setLoading(false);
-              return; // 성공하면 여기서 종료
-            }
-            
-            console.log('직접 호출 실패, 다른 방법 시도');
-            
-            // 옵션 2: CORS Anywhere 프록시 사용
-            const corsProxyUrl = `https://corsproxy.io/?${encodeURIComponent(directUrl)}`;
-            console.log('CORS 프록시 시도:', corsProxyUrl);
-            
-            const proxyResponse = await fetch(corsProxyUrl, fetchOptions);
-            
-            if (!proxyResponse.ok) {
-              throw new Error(`프록시 서버 응답 실패: ${proxyResponse.status}`);
-            }
-            
-            const responseData = await proxyResponse.json();
-            setData(responseData);
-            setLoading(false);
-            
-          } catch (innerError) {
-            console.error('모든 API 호출 방법 실패:', innerError);
-            throw innerError; // 외부 catch 블록으로 오류 전달
-          }
+          fetchOptions.mode = 'cors';
         }
+        
+        const response = await fetch(apiUrl, fetchOptions);
+        
+        if (!response.ok) {
+          throw new Error(`API 응답 실패: ${response.status}`);
+        }
+        
+        const responseData = await response.json();
+        setData(responseData);
+        setLoading(false);
       } catch (error) {
         console.error("데이터를 불러오는 중 오류 발생:", error);
         setError(`데이터를 불러오는 중 오류가 발생했습니다: ${error.message}`);
