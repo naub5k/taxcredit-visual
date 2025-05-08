@@ -28,18 +28,24 @@ function RegionDetailPage() {
         const apiUrl = `${baseUrl}/api/getSampleList?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}`;
         console.log('API URL:', apiUrl);
 
-        const fetchOptions = {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          }
-        };
-
-        // 개발 환경에서만 CORS 옵션 추가
-        if (process.env.NODE_ENV === 'development') {
-          fetchOptions.mode = 'cors';
-        }
+        // 환경에 따른, CORS 모드 분기 처리
+        const fetchOptions =
+          process.env.NODE_ENV === 'development'
+            ? {
+                method: 'GET',
+                headers: {
+                  Accept: 'application/json',
+                  'Content-Type': 'application/json',
+                },
+                mode: 'cors',
+              }
+            : {
+                method: 'GET',
+                headers: {
+                  Accept: 'application/json',
+                  'Content-Type': 'application/json',
+                },
+              };
         
         const response = await fetch(apiUrl, fetchOptions);
         
