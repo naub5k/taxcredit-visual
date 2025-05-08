@@ -23,6 +23,7 @@
     "scripts": {
         "start": "react-scripts start",
         "build": "react-scripts build",
+        "postbuild": "copy staticwebapp.config.json build\\",
         "deploy": "\"D:\\Program Files\\Git\\cmd\\git.exe\" push azure HEAD:master"
     },
     "eslintConfig": {

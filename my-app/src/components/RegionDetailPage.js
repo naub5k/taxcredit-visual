@@ -39,23 +39,45 @@ function RegionDetailPage() {
           
           console.log('개발 환경 API URL:', apiUrl);
         } else {
-          // 배포 환경 - 직접 Azure Functions URL 사용
-          apiUrl = `https://taxcredit-api-func.azurewebsites.net/api/getSampleList?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}`;
-          fetchOptions.mode = 'cors'; // 다른 도메인 호출시 CORS 필요
-          
-          console.log('배포 환경 API URL (직접):', apiUrl);
+          // 배포 환경 - 3가지 옵션 시도
+          try {
+            // 옵션 1: 직접 호출 (CORS 오류 가능성)
+            const directUrl = `https://taxcredit-api-func.azurewebsites.net/api/getSampleList?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}`;
+            console.log('직접 호출 시도:', directUrl);
+            
+            const directResponse = await fetch(directUrl, {
+              ...fetchOptions,
+              mode: 'cors',
+            });
+            
+            if (directResponse.ok) {
+              const responseData = await directResponse.json();
+              setData(responseData);
+              setLoading(false);
+              return; // 성공하면 여기서 종료
+            }
+            
+            console.log('직접 호출 실패, 다른 방법 시도');
+            
+            // 옵션 2: CORS Anywhere 프록시 사용
+            const corsProxyUrl = `https://corsproxy.io/?${encodeURIComponent(directUrl)}`;
+            console.log('CORS 프록시 시도:', corsProxyUrl);
+            
+            const proxyResponse = await fetch(corsProxyUrl, fetchOptions);
+            
+            if (!proxyResponse.ok) {
+              throw new Error(`프록시 서버 응답 실패: ${proxyResponse.status}`);
+            }
+            
+            const responseData = await proxyResponse.json();
+            setData(responseData);
+            setLoading(false);
+            
+          } catch (innerError) {
+            console.error('모든 API 호출 방법 실패:', innerError);
+            throw innerError; // 외부 catch 블록으로 오류 전달
+          }
         }
-
-        console.log('최종 API URL:', apiUrl);
-
-        const response = await fetch(apiUrl, fetchOptions);
-        if (!response.ok) {
-          throw new Error(`서버 응답 실패: ${response.status}`);
-        }
-
-        const responseData = await response.json();
-        setData(responseData);
-        setLoading(false);
       } catch (error) {
         console.error("데이터를 불러오는 중 오류 발생:", error);
         setError(`데이터를 불러오는 중 오류가 발생했습니다: ${error.message}`);
