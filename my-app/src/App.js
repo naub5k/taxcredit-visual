@@ -219,6 +219,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<AppContent />} />
+        <Route path="/region" element={<RegionDetailPage />} />
         <Route path="/region-detail" element={<RegionDetailPage />} />
       </Routes>
     </Router>
