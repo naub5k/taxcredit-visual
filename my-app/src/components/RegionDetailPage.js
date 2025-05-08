@@ -31,7 +31,6 @@ function RegionDetailPage() {
 
         // 현재 접속한 URL에서 호스트 부분 가져오기
         const currentHost = window.location.hostname;
-        const currentPort = window.location.port;
         
         if (process.env.NODE_ENV === 'development') {
           // IP 주소나 호스트명으로 접근 (localhost 대신)
