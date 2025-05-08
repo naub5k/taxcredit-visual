@@ -25,7 +25,7 @@ function RegionDetailPage() {
           ? `http://${window.location.hostname}:7071`
           : "";
 
-        const apiUrl = `${baseUrl}/api/getSampleList?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}`;
+        const apiUrl = `${baseUrl}/api/getsamplelist?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}`;
         console.log('API URL:', apiUrl);
 
         // 환경에 따른, CORS 모드 분기 처리

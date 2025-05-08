@@ -8,7 +8,7 @@
       "methods": [
         "get"
       ],
-      "route": "getSampleList"
+      "route": "getsamplelist"
     },
     {
       "type": "http",
