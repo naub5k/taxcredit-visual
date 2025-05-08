@@ -33,16 +33,17 @@ function RegionDetailPage() {
         const currentHost = window.location.hostname;
         
         if (process.env.NODE_ENV === 'development') {
-          // IP 주소나 호스트명으로 접근 (localhost 대신)
-          // 접속한 같은 IP의 7071 포트로 요청
+          // 개발 환경 (로컬)
           apiUrl = `http://${currentHost}:7071/api/getSampleList?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}`;
           fetchOptions.mode = 'cors'; // 로컬만 CORS 필요
           
           console.log('개발 환경 API URL:', apiUrl);
         } else {
-          // 배포 환경에서는 상대 경로 사용
-          apiUrl = `/api/getSampleList?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}`;
-          console.log('배포 환경 API URL:', apiUrl);
+          // 배포 환경 - 직접 Azure Functions URL 사용
+          apiUrl = `https://taxcredit-api-func.azurewebsites.net/api/getSampleList?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}`;
+          fetchOptions.mode = 'cors'; // 다른 도메인 호출시 CORS 필요
+          
+          console.log('배포 환경 API URL (직접):', apiUrl);
         }
 
         console.log('최종 API URL:', apiUrl);
