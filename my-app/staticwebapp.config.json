@@ -2,8 +2,7 @@
   "routes": [
     {
       "route": "/api/*",
-      "allowedRoles": ["anonymous"],
-      "rewrite": "/api"
+      "allowedRoles": ["anonymous"]
     },
     {
       "route": "/*",
@@ -13,7 +12,7 @@
   ],
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/api/*", "/assets/*", "/*.{css,js,png,jpg,gif,ico,svg,json}"]
+    "exclude": ["/api/*", "/static/*", "/assets/*", "/*.{css,js,png,jpg,gif,ico,svg,json}"]
   },
   "responseOverrides": {
     "404": {
