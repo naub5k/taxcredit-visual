@@ -1,17 +1,22 @@
 {
-  "navigationFallback": {
-    "rewrite": "/index.html",
-    "exclude": ["/static/*", "/images/*", "/*.{png,jpg,gif,ico,css,js}"]
-  },
   "routes": [
     {
-      "route": "/health",
-      "serve": "/health.html"
+      "route": "/api/*",
+      "allowedRoles": ["anonymous"]
     },
     {
       "route": "/*",
       "serve": "/index.html",
       "statusCode": 200
     }
-  ]
-} 
+  ],
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/api/*", "/static/*", "/assets/*", "/*.{css,js,png,jpg,gif,ico,svg,json}"]
+  },
+  "responseOverrides": {
+    "404": {
+      "rewrite": "/index.html"
+    }
+  }
+}
