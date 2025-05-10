@@ -1,7 +1,7 @@
 {
   "routes": [
     {
-      "route": "/api/getSampleList",
+      "route": "/api/getSampleList*",
       "rewrite": "https://taxcredit-api-func-v2.azurewebsites.net/api/getSampleList"
     },
     {
@@ -12,7 +12,12 @@
   ],
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/api/*", "/static/*", "/assets/*", "/*.{css,js,png,jpg,gif,ico,svg,json}"]
+    "exclude": [
+      "/api/*",
+      "/static/*",
+      "/assets/*",
+      "/*.{css,js,png,jpg,gif,ico,svg,json}"
+    ]
   },
   "responseOverrides": {
     "404": {
