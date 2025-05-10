@@ -2,7 +2,7 @@
   "routes": [
     {
       "route": "/api/getSampleList*",
-      "rewrite": "https://taxcredit-api-func-v2.azurewebsites.net/api/getSampleList"
+      "redirect": "https://taxcredit-api-func-v2.azurewebsites.net/api/getSampleList"
     },
     {
       "route": "/*",
