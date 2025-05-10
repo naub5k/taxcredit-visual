@@ -1,8 +1,8 @@
 {
   "routes": [
     {
-      "route": "/api/*",
-      "rewrite": "https://taxcredit-api-func-v2.azurewebsites.net/api/:splat",
+      "route": "/api/getSampleList",
+      "rewrite": "https://taxcredit-api-func-v2.azurewebsites.net/api/getSampleList"
     },
     {
       "route": "/*",
