@@ -34,5 +34,19 @@
           }
         }
       }
-    }
+    },
+    "rules": [
+      {
+        "id": "api-route-case-match",
+        "scope": ["react", "azure-functions"],
+        "trigger": "deploy", 
+        "check": "api-route-casing",
+        "description": "React 앱의 fetch 요청 경로와 Azure Function 라우트 경로의 대소문자가 일치하는지 검증한다.",
+        "severity": "high",
+        "autoFix": {
+          "strategy": "lowercase-react-api-path",
+          "comment": "API 경로의 대소문자 불일치로 404 또는 500 오류가 발생할 수 있어, React 측 경로를 Function 쪽에 맞춰 자동 수정"
+        }
+      }
+    ]
 }
