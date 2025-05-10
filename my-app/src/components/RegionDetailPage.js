@@ -27,95 +27,58 @@ function RegionDetailPage() {
             
         const apiPath = "/api/getSampleList";
         
-        // 환경에 따른 API URL 구성
-        let apiUrl;
-        
-        if (process.env.NODE_ENV === 'development') {
-          // 개발 환경
-          apiUrl = `${baseUrl}${apiPath}?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}`;
-        } else {
-          // 프로덕션 환경 - 3가지 방법으로 시도
-          
-          // 방법 1: Azure Static Web App의 API 프록시 사용 (기본)
-          apiUrl = `${apiPath}?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}`;
-          
-          // 방법 2: 직접 Azure Function URL 사용 (API 프록시 실패 시)
-          // apiUrl = `${baseUrl}${apiPath}?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}`;
-          
-          // 방법 3: CORS 프록시 사용 (직접 호출도 실패할 경우)
-          // const functionUrl = `${baseUrl}${apiPath}?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}`;
-          // apiUrl = `https://corsproxy.io/?${encodeURIComponent(functionUrl)}`;
-        }
+        // API URL 구성 - 직접 호출 방식으로 변경
+        const apiUrl = `${baseUrl}${apiPath}?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}`;
         
         console.log('API URL:', apiUrl);
 
-        // 환경에 따른, CORS 모드 분기 처리
-        const fetchOptions =
-          process.env.NODE_ENV === 'development'
-            ? {
-                method: 'GET',
-                headers: {
-                  Accept: 'application/json',
-                  'Content-Type': 'application/json',
-                },
-                mode: 'cors',
-              }
-            : {
-                method: 'GET',
-                headers: {
-                  Accept: 'application/json',
-                  'Content-Type': 'application/json',
-                },
-              };
+        // 모든 환경에서 일관된 fetch 옵션 사용
+        const fetchOptions = {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          mode: 'cors',
+        };
         
-        // 응답 시도
-        let response;
-        let responseData;
+        console.log('Fetch 옵션:', JSON.stringify(fetchOptions));
         
-        try {
-          // 첫 번째 방법 시도: 기본 URL로 호출
-          response = await fetch(apiUrl, fetchOptions);
+        // API 호출 및 응답 처리
+        const response = await fetch(apiUrl, fetchOptions);
+        
+        if (!response.ok) {
+          throw new Error(`API 호출 실패: ${response.status} ${response.statusText}`);
+        }
+        
+        // 디버깅: 응답 타입 확인
+        const contentType = response.headers.get('content-type');
+        console.log('응답 Content-Type:', contentType);
+        
+        if (!contentType || !contentType.includes('application/json')) {
+          console.warn('응답이 JSON 형식이 아닙니다:', contentType);
           
-          if (!response.ok) {
-            console.error(`기본 API 호출 실패 (${response.status}), 대체 방법 시도 중...`);
-            
-            // 방법 2: 직접 Azure Function URL 사용
-            const directUrl = `${baseUrl}${apiPath}?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}`;
-            console.log('직접 호출 URL 시도:', directUrl);
-            
-            const directResponse = await fetch(directUrl, {
-              ...fetchOptions,
-              mode: 'cors', // 직접 호출 시 CORS 모드 필요
-            });
-            
-            if (directResponse.ok) {
-              response = directResponse;
-            } else {
-              throw new Error(`직접 호출도 실패: ${directResponse.status}`);
-            }
+          // 응답 텍스트 확인 (디버깅용)
+          const textResponse = await response.text();
+          console.error('비정상 응답:', textResponse.substring(0, 100) + '...');
+          throw new Error('API가 JSON이 아닌 다른 형식으로 응답했습니다.');
+        }
+        
+        // JSON 응답 파싱
+        const responseData = await response.json();
+        console.log(`API 응답 데이터: ${responseData.length}건 수신됨`);
+        
+        // 데이터 확인 및 필터링 검증
+        if (sido && gugun && responseData.length > 0) {
+          console.log('응답 데이터 구군 필터 확인:');
+          const matchingItems = responseData.filter(item => item.구군 === gugun);
+          const nonMatchingItems = responseData.filter(item => item.구군 !== gugun);
+          
+          console.log(`- 구군(${gugun}) 일치 항목: ${matchingItems.length}건`);
+          if (nonMatchingItems.length > 0) {
+            console.warn(`- 구군(${gugun}) 불일치 항목: ${nonMatchingItems.length}건`);
+            console.warn('- 첫 번째 불일치 항목:', nonMatchingItems[0]);
           }
-          
-          // 성공한 응답에서 데이터 추출
-          responseData = await response.json();
-          
-          console.log(`API 응답 데이터: ${responseData.length}건 수신됨`);
-          
-          // 데이터 확인 및 필터링 검증
-          if (sido && gugun && responseData.length > 0) {
-            console.log('응답 데이터 구군 필터 확인:');
-            const matchingItems = responseData.filter(item => item.구군 === gugun);
-            const nonMatchingItems = responseData.filter(item => item.구군 !== gugun);
-            
-            console.log(`- 구군(${gugun}) 일치 항목: ${matchingItems.length}건`);
-            if (nonMatchingItems.length > 0) {
-              console.warn(`- 구군(${gugun}) 불일치 항목: ${nonMatchingItems.length}건`);
-              console.warn('- 첫 번째 불일치 항목:', nonMatchingItems[0]);
-            }
-          }
-          
-        } catch (fetchError) {
-          console.error('모든 API 호출 방법 실패:', fetchError);
-          throw fetchError;
         }
         
         setData(responseData);

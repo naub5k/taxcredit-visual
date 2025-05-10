@@ -1,8 +1,10 @@
 {
   "routes": [
     {
-      "route": "/api/getSampleList*",
-      "redirect": "https://taxcredit-api-func-v2.azurewebsites.net/api/getSampleList"
+      "route": "/api/getSampleList",
+      "allowedRoles": ["anonymous"],
+      "serve": "https://taxcredit-api-func-v2.azurewebsites.net/api/getSampleList",
+      "methods": ["GET", "OPTIONS"]
     },
     {
       "route": "/*",
@@ -23,5 +25,9 @@
     "404": {
       "rewrite": "/index.html"
     }
+  },
+  "globalHeaders": {
+    "Content-Security-Policy": "default-src 'self' https://taxcredit-api-func-v2.azurewebsites.net; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:;",
+    "X-Content-Type-Options": "nosniff"
   }
 }
