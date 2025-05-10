@@ -98,6 +98,21 @@ function RegionDetailPage() {
           // 성공한 응답에서 데이터 추출
           responseData = await response.json();
           
+          console.log(`API 응답 데이터: ${responseData.length}건 수신됨`);
+          
+          // 데이터 확인 및 필터링 검증
+          if (sido && gugun && responseData.length > 0) {
+            console.log('응답 데이터 구군 필터 확인:');
+            const matchingItems = responseData.filter(item => item.구군 === gugun);
+            const nonMatchingItems = responseData.filter(item => item.구군 !== gugun);
+            
+            console.log(`- 구군(${gugun}) 일치 항목: ${matchingItems.length}건`);
+            if (nonMatchingItems.length > 0) {
+              console.warn(`- 구군(${gugun}) 불일치 항목: ${nonMatchingItems.length}건`);
+              console.warn('- 첫 번째 불일치 항목:', nonMatchingItems[0]);
+            }
+          }
+          
         } catch (fetchError) {
           console.error('모든 API 호출 방법 실패:', fetchError);
           throw fetchError;
@@ -151,6 +166,11 @@ function RegionDetailPage() {
     );
   }
   
+  // 추가: 클라이언트측 필터링으로 보호 구현 (백엔드 필터링이 실패하는 경우에 대비)
+  const filteredData = gugun 
+    ? data.filter(item => item.구군 === gugun) 
+    : data;
+  
   return (
     <div className="min-h-screen bg-gray-100">
       <header className="bg-blue-700 text-white p-4 shadow-md">
@@ -174,9 +194,9 @@ function RegionDetailPage() {
       
       <main className="container mx-auto py-4 px-4">
         <div className="bg-white rounded-lg shadow-md p-4 mb-4">
-          <h2 className="text-lg font-bold mb-3">총 검색결과: {data.length}개</h2>
+          <h2 className="text-lg font-bold mb-3">총 검색결과: {filteredData.length}개</h2>
           
-          {data.length === 0 ? (
+          {filteredData.length === 0 ? (
             <div className="text-center py-6 text-gray-500">
               <p>해당 지역에 데이터가 없습니다.</p>
             </div>
@@ -193,7 +213,7 @@ function RegionDetailPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {data.map((item, index) => (
+                  {filteredData.map((item, index) => (
                     <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                       <td className="border-b p-2">{item.사업장명}</td>
                       <td className="border-b p-2">{item['2023']}</td>
