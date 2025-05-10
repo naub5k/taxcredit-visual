@@ -3,7 +3,6 @@
     {
       "route": "/api/*",
       "rewrite": "https://taxcredit-api-func-v2.azurewebsites.net/api/:splat",
-      "statusCode": 200
     },
     {
       "route": "/*",
