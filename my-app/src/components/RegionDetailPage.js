@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 function RegionDetailPage() {
@@ -13,88 +13,119 @@ function RegionDetailPage() {
   const sido = queryParams.get('sido');
   const gugun = queryParams.get('gugun');
   
+  // 현재 사용 중인 API 서버 URL 출력 (디버깅용)
+  useEffect(() => {
+    const hostname = window.location.hostname;
+    console.log('현재 호스트:', hostname);
+    console.log('환경:', process.env.NODE_ENV);
+    const isProd = process.env.NODE_ENV === 'production';
+    console.log('빌드 모드:', isProd ? '프로덕션' : '개발');
+  }, []);
+  
   useEffect(() => {
     const fetchData = async () => {
       try {
         console.log(`API 호출 시작: sido=${sido}, gugun=${gugun}`);
-        console.log('현재 환경:', process.env.NODE_ENV);
-
-        // 환경에 따른 API URL 구성
-        const baseUrl =
-          process.env.NODE_ENV === "development"
-            ? `http://${window.location.hostname}:7071`
-            : "https://taxcredit-api-func-v2.azurewebsites.net";
-            
-        const apiPath = "/api/getSampleList";
         
-        // API URL 구성 - 직접 호출 방식으로 변경
-        const apiUrl = `${baseUrl}${apiPath}?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}`;
+        // API URL 결정 로직 - 환경에 따른 분기 처리
+        const baseUrl = window.location.hostname.includes("localhost")
+          ? "http://localhost:7071"
+          : "https://taxcredit-api-func-v2.azurewebsites.net";
         
-        console.log('API URL:', apiUrl);
-
-        // 모든 환경에서 일관된 fetch 옵션 사용
-        const fetchOptions = {
+        console.log('API 기본 URL:', baseUrl);
+        
+        // 전체 URL 구성
+        const apiUrl = `${baseUrl}/api/getSampleList?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}`;
+        console.log('최종 API URL:', apiUrl);
+        
+        // 간소화된 fetch 옵션
+        const response = await fetch(apiUrl, {
           method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
           mode: 'cors',
-        };
-        
-        console.log('Fetch 옵션:', JSON.stringify(fetchOptions));
-        
-        // API 호출 및 응답 처리
-        const response = await fetch(apiUrl, fetchOptions);
-        
-        if (!response.ok) {
-          throw new Error(`API 호출 실패: ${response.status} ${response.statusText}`);
-        }
-        
-        // 디버깅: 응답 타입 확인
-        const contentType = response.headers.get('content-type');
-        console.log('응답 Content-Type:', contentType);
-        
-        if (!contentType || !contentType.includes('application/json')) {
-          console.warn('응답이 JSON 형식이 아닙니다:', contentType);
-          
-          // 응답 텍스트 확인 (디버깅용)
-          const textResponse = await response.text();
-          console.error('비정상 응답:', textResponse.substring(0, 100) + '...');
-          throw new Error('API가 JSON이 아닌 다른 형식으로 응답했습니다.');
-        }
-        
-        // JSON 응답 파싱
-        const responseData = await response.json();
-        console.log(`API 응답 데이터: ${responseData.length}건 수신됨`);
-        
-        // 데이터 확인 및 필터링 검증
-        if (sido && gugun && responseData.length > 0) {
-          console.log('응답 데이터 구군 필터 확인:');
-          const matchingItems = responseData.filter(item => item.구군 === gugun);
-          const nonMatchingItems = responseData.filter(item => item.구군 !== gugun);
-          
-          console.log(`- 구군(${gugun}) 일치 항목: ${matchingItems.length}건`);
-          if (nonMatchingItems.length > 0) {
-            console.warn(`- 구군(${gugun}) 불일치 항목: ${nonMatchingItems.length}건`);
-            console.warn('- 첫 번째 불일치 항목:', nonMatchingItems[0]);
+          headers: {
+            'Accept': 'application/json'
           }
+        });
+        
+        // 응답 상태 확인
+        if (!response.ok) {
+          throw new Error(`API 오류: ${response.status} ${response.statusText}`);
+        }
+        
+        // 응답 데이터 처리
+        const responseData = await response.json();
+        console.log(`데이터 ${responseData.length}건 수신됨`);
+        
+        // 필터링 검증은 유지
+        if (sido && gugun && responseData.length > 0) {
+          const matchingItems = responseData.filter(item => item.구군 === gugun);
+          console.log(`- 구군(${gugun}) 일치 항목: ${matchingItems.length}건`);
         }
         
         setData(responseData);
         setLoading(false);
       } catch (error) {
-        console.error("데이터를 불러오는 중 오류 발생:", error);
+        console.error("API 호출 오류:", error);
         setError(`데이터를 불러오는 중 오류가 발생했습니다: ${error.message}`);
         setLoading(false);
       }
     };
-
-    fetchData();
+    
+    if (sido) {
+      fetchData();
+    } else {
+      setError("시도 정보가 없습니다. 이전 페이지로 돌아가 지역을 선택해주세요.");
+      setLoading(false);
+    }
   }, [sido, gugun]);
   
   const handleBack = () => {
     navigate(-1);
+  };
+  
+  // 클라이언트측 필터링
+  const filteredData = useMemo(() => {
+    if (!data || data.length === 0) return [];
+    return gugun ? data.filter(item => item.구군 === gugun) : data;
+  }, [data, gugun]);
+  
+  // 최대값 계산 함수
+  const maxEmployeeCount = useMemo(() => {
+    if (!filteredData || filteredData.length === 0) return 0;
+    
+    return Math.max(
+      ...filteredData.flatMap(item => [
+        Number(item['2020']) || 0,
+        Number(item['2021']) || 0,
+        Number(item['2022']) || 0,
+        Number(item['2023']) || 0,
+        Number(item['2024']) || 0
+      ])
+    );
+  }, [filteredData]);
+  
+  // 시각화 렌더링 컴포넌트
+  const renderVisualCell = (value) => {
+    // 숫자가 아니거나 0인 경우 기본 텍스트만 표시
+    const numValue = Number(value) || 0;
+    if (numValue === 0) return '0';
+    
+    // 최대값 대비 비율 계산 (0~100%)
+    const percentage = Math.min(100, Math.max(0, (numValue / maxEmployeeCount) * 100));
+    
+    return (
+      <div style={{ position: "relative", height: "24px", width: "100%" }}>
+        <div style={{
+          width: `${percentage}%`,
+          height: "100%",
+          backgroundColor: "#e0e0e0",
+          position: "absolute",
+          top: 0, left: 0, zIndex: 0,
+          borderRadius: "2px"
+        }} />
+        <div style={{ position: "relative", zIndex: 1, padding: "2px 4px" }}>{numValue}</div>
+      </div>
+    );
   };
   
   if (loading) {
@@ -128,11 +159,6 @@ function RegionDetailPage() {
       </div>
     );
   }
-  
-  // 추가: 클라이언트측 필터링으로 보호 구현 (백엔드 필터링이 실패하는 경우에 대비)
-  const filteredData = gugun 
-    ? data.filter(item => item.구군 === gugun) 
-    : data;
   
   return (
     <div className="min-h-screen bg-gray-100">
@@ -169,6 +195,9 @@ function RegionDetailPage() {
                 <thead>
                   <tr className="bg-gray-100">
                     <th className="border-b p-2 text-left">사업장명</th>
+                    <th className="border-b p-2 text-left">2020</th>
+                    <th className="border-b p-2 text-left">2021</th>
+                    <th className="border-b p-2 text-left">2022</th>
                     <th className="border-b p-2 text-left">2023</th>
                     <th className="border-b p-2 text-left">2024</th>
                     <th className="border-b p-2 text-left">시도</th>
@@ -179,8 +208,11 @@ function RegionDetailPage() {
                   {filteredData.map((item, index) => (
                     <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                       <td className="border-b p-2">{item.사업장명}</td>
-                      <td className="border-b p-2">{item['2023']}</td>
-                      <td className="border-b p-2">{item['2024']}</td>
+                      <td className="border-b p-2">{renderVisualCell(item['2020'])}</td>
+                      <td className="border-b p-2">{renderVisualCell(item['2021'])}</td>
+                      <td className="border-b p-2">{renderVisualCell(item['2022'])}</td>
+                      <td className="border-b p-2">{renderVisualCell(item['2023'])}</td>
+                      <td className="border-b p-2">{renderVisualCell(item['2024'])}</td>
                       <td className="border-b p-2">{item.시도}</td>
                       <td className="border-b p-2">{item.구군}</td>
                     </tr>
