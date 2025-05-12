@@ -63,10 +63,10 @@ function RegionDetailPage() {
         }
         
         setData(responseData);
+        setLoading(false);
       } catch (error) {
         console.error("API 호출 오류:", error);
         setError(`데이터를 불러오는 중 오류가 발생했습니다: ${error.message}`);
-      } finally {
         setLoading(false);
       }
     };
@@ -104,33 +104,26 @@ function RegionDetailPage() {
     );
   }, [filteredData]);
   
-  // 새로운 세로 막대 그래프 컴포넌트
-  const CompanyDataBars = ({ item }) => {
-    const years = ['2020', '2021', '2022', '2023', '2024'];
-    const barContainerHeight = 50; // 세로 막대 컨테이너의 최대 높이 (px)
-
+  // 시각화 렌더링 컴포넌트
+  const renderVisualCell = (value) => {
+    // 숫자가 아니거나 0인 경우 기본 텍스트만 표시
+    const numValue = Number(value) || 0;
+    if (numValue === 0) return '0';
+    
+    // 최대값 대비 비율 계산 (0~100%)
+    const percentage = Math.min(100, Math.max(0, (numValue / maxEmployeeCount) * 100));
+    
     return (
-      <div className="flex justify-between items-end pt-3 pb-2 px-2 h-20"> {/* h-20으로 높이 조절 */} 
-        {years.map(year => {
-          const value = Number(item[year]) || 0;
-          // maxEmployeeCount가 0일 경우 barHeightPercentage가 NaN/Infinity가 될 수 있으므로, 0으로 처리
-          const barHeightPercentage = maxEmployeeCount > 0 ? (value / maxEmployeeCount) * 100 : 0;
-          // 음수 높이가 되지 않도록 Math.max 사용
-          const barPixelHeight = Math.max(0, (barHeightPercentage / 100) * barContainerHeight);
-
-          return (
-            <div key={year} className="flex flex-col items-center w-[18%] text-center">
-              <span className="text-xs text-gray-700 font-medium mb-0.5 h-4 flex items-center justify-center">{value}</span>
-              <div
-                style={{ height: `${Math.max(barPixelHeight, value > 0 ? 4 : 0)}px` }} // 값이 있을 때 최소 높이 4px, 없으면 0px
-                className={`w-3/5 rounded-sm ${value > 0 ? 'bg-blue-500' : 'bg-gray-300'} transition-all duration-300 ease-in-out`}
-                title={`${year}: ${value}`}
-              >
-              </div>
-              <span className="text-[10px] text-gray-500 mt-0.5">{year}</span>
-            </div>
-          );
-        })}
+      <div style={{ position: "relative", height: "24px", width: "100%" }}>
+        <div style={{
+          width: `${percentage}%`,
+          height: "100%",
+          backgroundColor: "#e0e0e0",
+          position: "absolute",
+          top: 0, left: 0, zIndex: 0,
+          borderRadius: "2px"
+        }} />
+        <div style={{ position: "relative", zIndex: 1, padding: "2px 4px" }}>{numValue}</div>
       </div>
     );
   };
@@ -140,8 +133,8 @@ function RegionDetailPage() {
       <div className="min-h-screen bg-gray-100 p-4">
         <div className="bg-white rounded-lg shadow-md p-6 flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600 mb-4"></div>
-            <p className="text-lg text-gray-600">데이터를 불러오는 중...</p>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600 mb-2"></div>
+            <p className="text-gray-600">데이터를 불러오는 중...</p>
           </div>
         </div>
       </div>
@@ -153,15 +146,12 @@ function RegionDetailPage() {
       <div className="min-h-screen bg-gray-100 p-4">
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="text-center text-red-600 mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-red-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <h2 className="text-xl font-bold mb-1">오류 발생</h2>
-            <p className="text-sm">{error}</p>
+            <h2 className="text-xl font-bold mb-2">오류 발생</h2>
+            <p>{error}</p>
           </div>
           <button 
             onClick={handleBack}
-            className="w-full bg-blue-600 text-white py-2.5 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors"
+            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors"
           >
             돌아가기
           </button>
@@ -172,15 +162,15 @@ function RegionDetailPage() {
   
   return (
     <div className="min-h-screen bg-gray-100">
-      <header className="bg-blue-700 text-white p-4 shadow-md sticky top-0 z-50">
-        <div className="container mx-auto flex items-center justify-between">
+      <header className="bg-blue-700 text-white p-4 shadow-md">
+        <div className="container mx-auto">
           <div className="flex items-center">
             <button 
               onClick={handleBack}
-              className="p-2 mr-2 rounded-full hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300"
+              className="mr-3 text-white"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
             <div>
@@ -191,38 +181,54 @@ function RegionDetailPage() {
         </div>
       </header>
       
-      <main className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        {!loading && !error && (
-          <>
-            <div className="mb-6 flex justify-between items-center">
-              <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
-                총 검색결과: <span className="text-blue-600 font-bold">{filteredData.length}</span>개
-              </h2>
+      <main className="container mx-auto py-4 px-4">
+        <div className="bg-white rounded-lg shadow-md p-4 mb-4">
+          <h2 className="text-lg font-bold mb-3">총 검색결과: {filteredData.length}개</h2>
+          
+          {filteredData.length === 0 ? (
+            <div className="text-center py-6 text-gray-500">
+              <p>해당 지역에 데이터가 없습니다.</p>
             </div>
-
-            {filteredData.length === 0 ? (
-              <div className="text-center py-10 bg-white rounded-lg shadow-md p-6">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <p className="text-xl font-semibold text-gray-700">해당 지역에 데이터가 없습니다.</p>
-                <p className="text-sm text-gray-500 mt-1">다른 지역을 선택해보세요.</p>
-              </div>
-            ) : (
-              <div className="space-y-3 sm:space-y-4">
-                {filteredData.map((item, index) => (
-                  <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden transition-shadow hover:shadow-lg">
-                    <div className="px-4 py-3 sm:px-5 sm:py-3.5 border-b border-gray-200">
-                      <h3 className="text-base sm:text-lg font-semibold text-gray-800 truncate">{item.사업장명}</h3>
-                    </div>
-                    {/* 새로운 시각화 컴포넌트 사용 */}
-                    <CompanyDataBars item={item} />
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
+          ) : (
+            <div className="overflow-x-auto">
+              <div className="overflow-x-auto">
+  <table className="min-w-full border-collapse">
+    <thead>
+      <tr className="bg-gray-100">
+        <th className="border-b p-2 text-left">사업장명</th>
+        <th className="border-b p-2 text-left" colSpan={5}>연도별 인원 수</th>
+      </tr>
+      <tr className="bg-gray-50 text-sm text-gray-600">
+        <th></th>
+        <th className="border-b p-2 text-left">2020</th>
+        <th className="border-b p-2 text-left">2021</th>
+        <th className="border-b p-2 text-left">2022</th>
+        <th className="border-b p-2 text-left">2023</th>
+        <th className="border-b p-2 text-left">2024</th>
+      </tr>
+    </thead>
+    <tbody>
+      {filteredData.map((item, index) => (
+        <React.Fragment key={index}>
+          <tr className="bg-white">
+            <td className="border-b p-2 font-medium" colSpan={6}>{item.사업장명}</td>
+          </tr>
+          <tr className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+            <td className="border-b p-2"></td>
+            <td className="border-b p-2">{renderVisualCell(item['2020'])}</td>
+            <td className="border-b p-2">{renderVisualCell(item['2021'])}</td>
+            <td className="border-b p-2">{renderVisualCell(item['2022'])}</td>
+            <td className="border-b p-2">{renderVisualCell(item['2023'])}</td>
+            <td className="border-b p-2">{renderVisualCell(item['2024'])}</td>
+          </tr>
+        </React.Fragment>
+      ))}
+    </tbody>
+  </table>
+</div>
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );
