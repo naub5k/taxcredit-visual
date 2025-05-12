@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import RegionSelector from './components/RegionSelector';
 import RegionChart from './components/RegionChart';
 import MobileRegionDetail from './components/MobileRegionDetail';
