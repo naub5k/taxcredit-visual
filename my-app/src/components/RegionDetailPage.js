@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { CompanyDataBars } from './RegionDetailComponents';
+import PartnerModal from './PartnerModal';
 
 function RegionDetailPage() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState([]);
   const [error, setError] = useState(null);
+  const [showPartnerModal, setShowPartnerModal] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -12,6 +15,12 @@ function RegionDetailPage() {
   const queryParams = new URLSearchParams(location.search);
   const sido = queryParams.get('sido');
   const gugun = queryParams.get('gugun');
+  
+  // 디버깅용 로그 추가
+  useEffect(() => {
+    console.log('현재 URL:', location.search);
+    console.log('sido:', sido, 'gugun:', gugun);
+  }, [location.search, sido, gugun]);
   
   // 현재 사용 중인 API 서버 URL 출력 (디버깅용)
   useEffect(() => {
@@ -103,36 +112,10 @@ function RegionDetailPage() {
       ])
     );
   }, [filteredData]);
-  
-  // 새로운 세로 막대 그래프 컴포넌트
-  const CompanyDataBars = ({ item }) => {
-    const years = ['2020', '2021', '2022', '2023', '2024'];
-    const barContainerHeight = 50; // 세로 막대 컨테이너의 최대 높이 (px)
 
-    return (
-      <div className="flex justify-between items-end pt-3 pb-2 px-2 h-20"> {/* h-20으로 높이 조절 */} 
-        {years.map(year => {
-          const value = Number(item[year]) || 0;
-          // maxEmployeeCount가 0일 경우 barHeightPercentage가 NaN/Infinity가 될 수 있으므로, 0으로 처리
-          const barHeightPercentage = maxEmployeeCount > 0 ? (value / maxEmployeeCount) * 100 : 0;
-          // 음수 높이가 되지 않도록 Math.max 사용
-          const barPixelHeight = Math.max(0, (barHeightPercentage / 100) * barContainerHeight);
-
-          return (
-            <div key={year} className="flex flex-col items-center w-[18%] text-center">
-              <span className="text-xs text-gray-700 font-medium mb-0.5 h-4 flex items-center justify-center">{value}</span>
-              <div
-                style={{ height: `${Math.max(barPixelHeight, value > 0 ? 4 : 0)}px` }} // 값이 있을 때 최소 높이 4px, 없으면 0px
-                className={`w-3/5 rounded-sm ${value > 0 ? 'bg-blue-500' : 'bg-gray-300'} transition-all duration-300 ease-in-out`}
-                title={`${year}: ${value}`}
-              >
-              </div>
-              <span className="text-[10px] text-gray-500 mt-0.5">{year}</span>
-            </div>
-          );
-        })}
-      </div>
-    );
+  // 파트너 모달 닫기
+  const handleClosePartnerModal = () => {
+    setShowPartnerModal(false);
   };
   
   if (loading) {
@@ -198,32 +181,79 @@ function RegionDetailPage() {
               <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
                 총 검색결과: <span className="text-blue-600 font-bold">{filteredData.length}</span>개
               </h2>
+              <div className="flex items-center">
+                <Link
+                  to={`/partner?sido=${sido}&gugun=${gugun}`}
+                  className="text-purple-700 font-semibold hover:underline flex items-center"
+                >
+                  파트너 전용 <span className="ml-1">&gt;</span>
+                </Link>
+              </div>
             </div>
 
-            {filteredData.length === 0 ? (
-              <div className="text-center py-10 bg-white rounded-lg shadow-md p-6">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <p className="text-xl font-semibold text-gray-700">해당 지역에 데이터가 없습니다.</p>
-                <p className="text-sm text-gray-500 mt-1">다른 지역을 선택해보세요.</p>
-              </div>
-            ) : (
-              <div className="space-y-3 sm:space-y-4">
+            {/* 업체별 상세 결과 표시 */}
+            {filteredData.length > 0 ? (
+              <div className="space-y-6">
                 {filteredData.map((item, index) => (
-                  <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden transition-shadow hover:shadow-lg">
-                    <div className="px-4 py-3 sm:px-5 sm:py-3.5 border-b border-gray-200">
-                      <h3 className="text-base sm:text-lg font-semibold text-gray-800 truncate">{item.사업장명}</h3>
+                  <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div className="p-4 border-b">
+                      <h3 className="text-lg font-bold text-gray-800">{item.사업장명}</h3>
+                      <div className="text-sm text-gray-500 mt-1 flex flex-wrap gap-2">
+                        {item.업종명 && <span>{item.업종명}</span>}
+                        {item.사업자등록번호 && (
+                          <span className="bg-gray-100 px-2 py-0.5 rounded">
+                            {item.사업자등록번호}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    {/* 새로운 시각화 컴포넌트 사용 */}
-                    <CompanyDataBars item={item} />
+                    
+                    {/* 연도별 그래프 */}
+                    <div className="bg-gray-50">
+                      <div className="p-3 border-b">
+                        <div className="flex justify-between items-center">
+                          <h4 className="text-sm font-medium text-gray-700">연도별 고용인원 추이</h4>
+                          <div className="text-xs text-gray-500">(단위: 명)</div>
+                        </div>
+                        <CompanyDataBars item={item} maxEmployeeCount={maxEmployeeCount} />
+                      </div>
+                      
+                      <div className="px-4 py-3 grid grid-cols-2 gap-3 text-sm text-gray-700">
+                        <div>
+                          <span className="font-medium text-gray-500">주소:</span> {item.주소}
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-500">대표자:</span> {item.대표자명 || '-'}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 ))}
+              </div>
+            ) : (
+              <div className="bg-white p-8 rounded-lg shadow-md text-center">
+                <div className="text-gray-400 mb-4">
+                  <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-1">검색 결과가 없습니다</h3>
+                <p className="text-gray-500">
+                  {sido} {gugun} 지역에 해당하는 사업장 데이터를 찾을 수 없습니다.
+                </p>
               </div>
             )}
           </>
         )}
       </main>
+      
+      {/* 파트너 모달 */}
+      <PartnerModal
+        isOpen={showPartnerModal}
+        onClose={handleClosePartnerModal}
+        sido={sido}
+        gugun={gugun}
+      />
     </div>
   );
 }

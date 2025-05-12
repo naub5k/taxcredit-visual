@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import RegionSelector from './components/RegionSelector';
 import RegionChart from './components/RegionChart';
 import MobileRegionDetail from './components/MobileRegionDetail';
 import RegionDetailPage from './components/RegionDetailPage';
+import { RegionSummaryBox, PartnerServiceLink } from './components/RegionDetailComponents';
+import PartnerModal from './components/PartnerModal';
 import './App.css';
-import { regionGroups } from './data/employmentRegionData';
+import { regionGroups, employmentRegionData } from './data/employmentRegionData';
 
 // 메인 앱 컴포넌트
 function AppContent() {
@@ -15,6 +17,37 @@ function AppContent() {
   const [showMobileDetail, setShowMobileDetail] = useState(false);
   const capitalAreaRef = useRef(null);
   const otherRegionsRef = useRef(null);
+  const [selectedDistrict, setSelectedDistrict] = useState(null); // 선택된 구/군 정보
+  const [showPartnerModal, setShowPartnerModal] = useState(false); // 파트너 모달 상태
+
+  // 최초 로딩 시 기본 데이터 설정 (서울특별시)
+  useEffect(() => {
+    // 초기에는 서울특별시 데이터를 기본으로 설정
+    const seoulData = employmentRegionData.find(region => region.시도 === '서울특별시');
+    if (seoulData && !selectedChartData) {
+      setSelectedChartData(seoulData);
+    }
+  }, [selectedChartData]);
+
+  // 지역 데이터 변경 시 선택된 구/군 업데이트
+  useEffect(() => {
+    if (selectedChartData && selectedChartData.구군목록 && selectedChartData.구군목록.length > 0) {
+      // 구/군 데이터 처리
+      const districts = selectedChartData.구군목록
+        .sort((a, b) => b.업체수 - a.업체수)
+        .map(district => ({
+          name: district.구군,
+          업체수: district.업체수,
+          비율: parseFloat(((district.업체수 / selectedChartData.업체수) * 100).toFixed(2))
+        }));
+        
+      if (districts.length > 0) {
+        setSelectedDistrict(districts[0]); // 첫 번째 구/군을 기본 선택
+      }
+    } else {
+      setSelectedDistrict(null);
+    }
+  }, [selectedChartData]);
 
   // 반응형 디자인을 위한 화면 크기 감지
   useEffect(() => {
@@ -59,6 +92,21 @@ function AppContent() {
     }
   };
 
+  // 파트너 모달 띄우기
+  const handleShowPartnerModal = () => {
+    setShowPartnerModal(true);
+  };
+
+  // 파트너 모달 닫기
+  const handleClosePartnerModal = () => {
+    setShowPartnerModal(false);
+  };
+
+  // 차트 클릭 이벤트 핸들러 - 구/군 선택
+  const handleDistrictClick = (district) => {
+    setSelectedDistrict(district);
+  };
+
   // 지역명에 따른 타이틀 생성 함수
   const getRegionTitle = (regionName) => {
     if (!regionName) return '';
@@ -68,12 +116,13 @@ function AppContent() {
     } else if (regionName.endsWith('도')) {
       return `${regionName} 전체 시/군 현황`;
     } else if (regionName === '서울특별시') {
-      return `${regionName} 28개 구 현황`;
+      return `${regionName} 전체 구 현황`;
     } else {
       return `${regionName} 구/군별 현황`;
     }
   };
 
+  // 모바일에서 상세 화면 표시 시
   if (isMobile && showMobileDetail && selectedChartData) {
     return (
       <MobileRegionDetail 
@@ -83,6 +132,17 @@ function AppContent() {
       />
     );
   }
+
+  // 구/군 데이터 처리 (렌더링용)
+  const districtData = selectedChartData && selectedChartData.구군목록 
+    ? selectedChartData.구군목록
+        .sort((a, b) => b.업체수 - a.업체수)
+        .map(district => ({
+          name: district.구군,
+          업체수: district.업체수,
+          비율: parseFloat(((district.업체수 / selectedChartData.업체수) * 100).toFixed(2))
+        }))
+    : [];
 
   return (
     <div className="App bg-gray-100 min-h-screen">
@@ -129,40 +189,69 @@ function AppContent() {
             />
           </div>
           
-          {/* 우측: 선택된 지역 상세 정보 (있는 경우만 표시) - 모바일에서는 표시하지 않음 */}
+          {/* 우측: 지역 상세 정보 - 모바일의 두 번째 화면과 동일한 구조 (PC/태블릿에서만 표시) */}
           {!isMobile && selectedChartData && (
             <div className="col-span-1">
-              <div className="bg-white rounded-lg shadow-md p-4 sticky top-4">
-                <h2 className="text-xl font-bold mb-3 text-gray-800">
-                  {getRegionTitle(selectedChartData.시도 || selectedChartData.name)}
-                </h2>
-                <div className="bg-blue-50 p-3 rounded-lg mb-3">
-                  <h3 className="font-medium text-gray-700">총 업체 수</h3>
-                  <p className="text-xl font-bold text-blue-700">
-                    {selectedChartData.업체수.toLocaleString()}개
-                  </p>
-                </div>
-                {selectedChartData.구군목록 && (
-                  <div className="mt-2">
-                    <h3 className="font-medium text-gray-700 mb-2">구/군별 현황</h3>
-                    <div className="max-h-[60vh] overflow-y-auto pr-2">
-                      {selectedChartData.구군목록.map((item, index) => (
-                        <div key={index} className="mb-2">
-                          <div className="flex justify-between text-sm mb-1">
-                            <span>{item.구군}</span>
-                            <span className="font-medium">{item.업체수.toLocaleString()}개</span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
-                              className="bg-blue-600 h-2 rounded-full" 
-                              style={{ width: `${(item.업체수 / selectedChartData.업체수) * 100}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+              <div className="bg-white rounded-lg shadow-md">
+                {/* 지역 상세 정보 헤더 */}
+                <div className="bg-blue-700 text-white p-4 rounded-t-lg flex items-center">
+                  <div className="flex-1">
+                    <h2 className="text-xl font-bold">지역 상세 정보</h2>
+                    <p className="text-sm opacity-80">{selectedChartData.시도}</p>
                   </div>
-                )}
+                </div>
+                
+                {/* 지역 상세 컨텐츠 - 모바일과 동일한 컴포넌트 사용 */}
+                <div className="p-4">
+                  {/* RegionSummaryBox 컴포넌트 재사용 */}
+                  <RegionSummaryBox
+                    regionData={selectedChartData}
+                    selectedDistrict={selectedDistrict}
+                    onShowPartnerModal={handleShowPartnerModal}
+                  />
+
+                  {/* PartnerServiceLink 컴포넌트 재사용 */}
+                  <PartnerServiceLink
+                    sido={selectedChartData.시도}
+                    gugun={selectedDistrict ? selectedDistrict.name : ''}
+                    onShowPartnerModal={handleShowPartnerModal}
+                  />
+                  
+                  {/* 구/군별 업체 수 비교 목록 */}
+                  {districtData.length > 0 && (
+                    <div className="bg-white rounded-lg shadow-md p-4 mb-4">
+                      <h3 className="font-medium text-gray-700 mb-3">
+                        구/군별 업체 수 비교 <span className="text-sm text-gray-500">(클릭하여 상세 정보 확인)</span>
+                      </h3>
+                      <div className="max-h-80 overflow-y-auto">
+                        {districtData.map((district, index) => {
+                          const isSelected = selectedDistrict && selectedDistrict.name === district.name;
+                          
+                          return (
+                            <div 
+                              key={index}
+                              className={`mb-2 p-2 rounded-md cursor-pointer ${isSelected ? 'bg-blue-50' : ''}`}
+                              onClick={() => handleDistrictClick(district)}
+                            >
+                              <div className="flex justify-between items-center text-sm mb-1">
+                                <span className={isSelected ? 'font-bold text-blue-700' : ''}>{district.name}</span>
+                                <span className={isSelected ? 'font-bold text-blue-700' : ''}>
+                                  {district.업체수.toLocaleString()} ({district.비율}%)
+                                </span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div 
+                                  className={`${isSelected ? 'bg-blue-700' : 'bg-blue-500'} h-2 rounded-full`} 
+                                  style={{ width: `${district.비율}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -187,7 +276,8 @@ function AppContent() {
                   {((selectedRegion.업체수 / selectedRegion.시도업체수) * 100).toFixed(2)}%
                 </p>
               </div>
-              <div className="bg-purple-50 p-3 rounded-lg cursor-pointer hover:bg-purple-100 transition-colors">
+              <div className="bg-purple-50 p-3 rounded-lg cursor-pointer hover:bg-purple-100 transition-colors"
+                  onClick={handleShowPartnerModal}>
                 <h3 className="font-medium text-gray-700">상세 정보 조회</h3>
                 <div className="flex justify-between items-center">
                   <p className="text-purple-700 font-bold">파트너 전용</p>
@@ -209,6 +299,14 @@ function AppContent() {
           <p className="text-sm">© 2025 고용이력부 시스템 | 데이터 출처: 덕율세무회계사무소</p>
         </div>
       </footer>
+      
+      {/* 파트너 모달 */}
+      <PartnerModal 
+        isOpen={showPartnerModal} 
+        onClose={handleClosePartnerModal} 
+        sido={selectedChartData?.시도 || ''}
+        gugun={selectedDistrict?.name || ''}
+      />
     </div>
   );
 }

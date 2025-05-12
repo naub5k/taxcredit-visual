@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import PartnerModal from './PartnerModal';
+import { RegionSummaryBox, PartnerServiceLink } from './RegionDetailComponents';
 
 /**
  * 모바일 환경에서 선택된 지역의 상세 정보를 전체 화면으로 표시하는 컴포넌트
@@ -91,10 +92,6 @@ const MobileRegionDetail = ({ regionData, onBack, getRegionTitle }) => {
   };
 
   const regionName = regionData.시도 || regionData.name;
-  const regionTitle = getRegionTitle(regionName);
-  
-  // 전국 대비 비율 계산 (총 업체수를 1,000,000으로 가정)
-  const nationalRatio = ((regionData.업체수 / 1000000) * 100).toFixed(2);
 
   return (
     <div className="mobile-region-detail bg-gray-100 min-h-screen">
@@ -120,80 +117,20 @@ const MobileRegionDetail = ({ regionData, onBack, getRegionTitle }) => {
       </header>
 
       <main className="container mx-auto py-4 px-3">
-        {/* 지역 요약 정보 카드 - 4분할 그리드 */}
-        <div ref={topSummaryRef} className="bg-white rounded-lg shadow-md p-4 mb-4">
-          <h2 className="text-xl font-bold mb-3 text-gray-800">{regionTitle}</h2>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-            {/* 시/도명 */}
-            <div className="bg-gray-50 p-3 rounded-lg">
-              <h3 className="font-medium text-gray-500 text-sm">시/도:</h3>
-              <p className="text-lg font-bold text-gray-800">
-                {regionName}
-              </p>
-            </div>
-            
-            {/* 전체 업체 수 */}
-            <div className="bg-blue-50 p-3 rounded-lg">
-              <h3 className="font-medium text-gray-500 text-sm">전체 업체 수:</h3>
-              <p className="text-lg font-bold text-blue-700">
-                {regionData.업체수.toLocaleString()}개
-              </p>
-            </div>
-            
-            {/* 선택된 구/군 (있을 경우) */}
-            {selectedDistrict && (
-              <>
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <h3 className="font-medium text-gray-500 text-sm">선택된 구/군:</h3>
-                  <p className="text-lg font-bold text-gray-800">
-                    {selectedDistrict.name}
-                  </p>
-                </div>
-                
-                <div 
-                  className="bg-green-50 p-3 rounded-lg cursor-pointer hover:bg-green-100 transition-colors"
-                  onClick={handleShowPartnerModal}
-                >
-                  <h3 className="font-medium text-gray-500 text-sm">해당 구/군 업체 수:</h3>
-                  <div className="flex justify-between items-center">
-                    <p className="text-lg font-bold text-green-700">
-                      {selectedDistrict.업체수.toLocaleString()}개
-                    </p>
-                    <span className="text-xs bg-green-700 text-white px-2 py-1 rounded">상세보기</span>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-          
-          {/* 추가 정보 섹션 */}
-          <div className="bg-blue-50 rounded-lg p-3 mb-4">
-            <h3 className="font-medium text-gray-700 mb-2">지역 개요</h3>
-            <p className="text-sm text-gray-600">
-              <span className="font-bold text-blue-800">{regionName}</span>은(는) 전국 대비 
-              <span className="font-bold text-blue-800"> {nationalRatio}%</span>의 
-              업체가 분포하고 있습니다.
-              {selectedDistrict && (
-                <> <span className="font-bold text-green-700">{selectedDistrict.name}</span> 지역은 
-                {regionName} 내에서 <span className="font-bold text-green-700">{selectedDistrict.비율.toFixed(1)}%</span>를 
-                차지하며, 총 <span className="font-bold text-green-700">{selectedDistrict.업체수.toLocaleString()}</span>개의
-                업체가 있습니다.</>
-              )}
-            </p>
-          </div>
+        {/* 지역 요약 정보 - 공통 컴포넌트 사용 */}
+        <div ref={topSummaryRef}>
+          <RegionSummaryBox 
+            regionData={regionData}
+            selectedDistrict={selectedDistrict}
+            onShowPartnerModal={handleShowPartnerModal}
+          />
 
-          {/* 파트너 서비스 영역 */}
-          <div className="bg-purple-50 rounded-lg p-3 flex justify-between items-center cursor-pointer hover:bg-purple-100 transition-colors"
-               onClick={handleShowPartnerModal}>
-            <div>
-              <h3 className="font-medium text-gray-700">상세 정보 조회</h3>
-              <p className="text-sm text-gray-600">전체 사업장 목록 확인</p>
-            </div>
-            <div className="text-purple-700 font-bold">
-              파트너 전용 &gt;
-            </div>
-          </div>
+          {/* 파트너 서비스 링크 - 공통 컴포넌트 사용 */}
+          <PartnerServiceLink 
+            sido={regionData.시도}
+            gugun={selectedDistrict ? selectedDistrict.name : ''}
+            onShowPartnerModal={handleShowPartnerModal}
+          />
         </div>
 
         {/* 구/군별 현황 바 차트 */}

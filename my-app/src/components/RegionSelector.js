@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { employmentRegionData } from '../data/employmentRegionData';
 
 /**
@@ -16,6 +16,14 @@ const RegionSelector = ({ onRegionChange }) => {
   const [selectedCompanyCount, setSelectedCompanyCount] = useState(0);
   const [stateCompanyCount, setStateCompanyCount] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+  
+  // 이전 상태를 추적하기 위한 useRef 추가
+  const prevStateRef = useRef({ 
+    selectedDistrict: null,
+    selectedState: null,
+    selectedCompanyCount: 0,
+    stateCompanyCount: 0
+  });
 
   // 모바일 환경 감지
   useEffect(() => {
@@ -59,12 +67,30 @@ const RegionSelector = ({ onRegionChange }) => {
         
         // 상위 컴포넌트에 선택된 지역 정보 전달 (있는 경우)
         if (onRegionChange) {
-          onRegionChange({
-            시도: selectedState,
-            구군: selectedDistrict,
-            업체수: districtData.업체수,
-            시도업체수: stateCompanyCount
-          });
+          // 이전 값과 현재 값을 비교하여 변경이 있을 때만 호출
+          const prevState = prevStateRef.current;
+          const isChanged = 
+            prevState.selectedState !== selectedState ||
+            prevState.selectedDistrict !== selectedDistrict ||
+            prevState.selectedCompanyCount !== districtData.업체수 ||
+            prevState.stateCompanyCount !== stateCompanyCount;
+            
+          if (isChanged) {
+            onRegionChange({
+              시도: selectedState,
+              구군: selectedDistrict,
+              업체수: districtData.업체수,
+              시도업체수: stateCompanyCount
+            });
+            
+            // 현재 상태를 이전 상태로 저장
+            prevStateRef.current = {
+              selectedState,
+              selectedDistrict,
+              selectedCompanyCount: districtData.업체수,
+              stateCompanyCount
+            };
+          }
         }
       }
     } else {
