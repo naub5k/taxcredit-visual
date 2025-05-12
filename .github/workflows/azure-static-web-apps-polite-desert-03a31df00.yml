@@ -36,5 +36,5 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
           app_location: "my-app"
-          output_location: "my-app/build"
+          output_location: "build"
           api_build_command: "npm install" 
