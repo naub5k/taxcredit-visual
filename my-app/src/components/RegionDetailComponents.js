@@ -119,29 +119,72 @@ export const PartnerServiceLink = ({ sido, gugun, onShowPartnerModal }) => {
 };
 
 /**
+ * 그라데이션 색상 계산 함수
+ * @param {number} value - 현재 값
+ * @param {number} maxValue - 해당 기업 내 최대 값
+ * @param {boolean} isFlat - 해당 기업의 데이터가 모두 동일한지 여부
+ * @returns {string} rgba 색상 문자열
+ */
+const getGradientColor = (value, maxValue, isFlat) => {
+  if (value === 0) {
+    // 값이 0이면 항상 매우 연한 기본 색상
+    return 'rgba(130, 68, 148, 0.1)'; 
+  }
+  if (isFlat) {
+    // 데이터 변화가 없는 기업은 고정된 중간 채도 색상
+    return 'rgba(70, 220, 160, 0.47)';
+  }
+  // 데이터 변화가 있는 기업:
+  const ratio = maxValue > 0 ? value / maxValue : 1; // maxValue가 0인데 value가 있다면 ratio=1 (에지 케이스 방어)
+  // alpha 값은 최소 0.2 (완전히 투명하지 않게) 최대 1로 제한
+  const alpha = Math.min(Math.max(ratio, 0.2), 1); 
+  return `rgba(70, 220, 190, ${alpha})`; // 청록색 계열, alpha 값으로 진하기 조절
+};
+
+/**
  * 세로 막대 그래프 컴포넌트 - 회사 데이터 시각화
  */
-export const CompanyDataBars = ({ item, maxEmployeeCount }) => {
+export const CompanyDataBars = ({ item }) => {
   if (!item) return null;
   
   const years = ['2020', '2021', '2022', '2023', '2024'];
   const barContainerHeight = 50; // 세로 막대 컨테이너의 최대 높이 (px)
 
+  const companyYearsData = years.map(year => Number(item[year]) || 0);
+  const companyMaxEmployeeCount = Math.max(...companyYearsData, 0);
+  
+  // 데이터가 모두 동일한지(flat) 확인
+  const isFlatData = companyYearsData.length > 0 && companyYearsData.every(v => v === companyYearsData[0]);
+
   return (
     <div className="flex justify-between items-end pt-3 pb-2 px-2 h-20">
       {years.map(year => {
         const value = Number(item[year]) || 0;
-        // maxEmployeeCount가 0일 경우 barHeightPercentage가 NaN/Infinity가 될 수 있으므로, 0으로 처리
-        const barHeightPercentage = maxEmployeeCount > 0 ? (value / maxEmployeeCount) * 100 : 0;
-        // 음수 높이가 되지 않도록 Math.max 사용
-        const barPixelHeight = Math.max(0, (barHeightPercentage / 100) * barContainerHeight);
+        let barPixelHeight;
+
+        if (value === 0) {
+          barPixelHeight = 0;
+        } else if (isFlatData) {
+          barPixelHeight = 0.55 * barContainerHeight; // 변화 없는 기업은 고정 55% 높이
+        } else {
+          // 변화 있는 기업: 회사 내부 최대값 기준 상대적 높이 (최소 35% ~ 최대 100%)
+          const ratio = companyMaxEmployeeCount > 0 ? value / companyMaxEmployeeCount : 1;
+          const minVisualRatio = 0.35;
+          const scaledRatio = minVisualRatio + (1.0 - minVisualRatio) * ratio;
+          barPixelHeight = scaledRatio * barContainerHeight;
+        }
+        
+        const backgroundColor = getGradientColor(value, companyMaxEmployeeCount, isFlatData);
 
         return (
           <div key={year} className="flex flex-col items-center w-[18%] text-center">
-            <span className="text-xs text-gray-700 font-medium mb-0.5 h-4 flex items-center justify-center">{value}</span>
+            <span className="text-sm text-gray-700 font-bold mb-0.5 h-4 flex items-center justify-center">{value}</span>
             <div
-              style={{ height: `${Math.max(barPixelHeight, value > 0 ? 4 : 0)}px` }} // 값이 있을 때 최소 높이 4px, 없으면 0px
-              className={`w-3/5 rounded-sm ${value > 0 ? 'bg-blue-500' : 'bg-gray-300'} transition-all duration-300 ease-in-out`}
+              style={{ 
+                height: `${barPixelHeight}px`,
+                backgroundColor: backgroundColor
+              }} 
+              className="w-3/5 rounded-sm transition-all duration-300 ease-in-out"
               title={`${year}: ${value}`}
             >
             </div>
