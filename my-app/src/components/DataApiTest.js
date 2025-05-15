@@ -24,7 +24,7 @@ function DataApiTest() {
     
     // API 엔드포인트 설정 (data-api 또는 기존 함수)
     const endpoint = useDataApi
-      ? '/data-api/rest/Sample' // 수정: InsuCompany → Sample (config 파일의 엔티티명과 일치)
+      ? '/data-api/rest/InsuCompany' // 수정: Sample -> InsuCompany
       : '/api/getSampleList?sido=서울특별시&gugun=강남구';
 
     console.log(`API 요청: ${endpoint}`);
@@ -114,7 +114,7 @@ function DataApiTest() {
       <div className="bg-gray-50 p-3 rounded text-sm text-gray-600">
         <h4 className="font-medium">API 정보</h4>
         <p>
-          현재 API: <span className="font-mono">{useDataApi ? '/data-api/rest/Sample' : '/api/getSampleList'}</span><br />
+          현재 API: <span className="font-mono">{useDataApi ? '/data-api/rest/InsuCompany' : '/api/getSampleList'}</span><br />
           이 컴포넌트는 Azure Static Web Apps 데이터베이스 연결과 기존 API Function을 비교 테스트합니다.
         </p>
       </div>

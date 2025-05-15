@@ -3,6 +3,13 @@
     {
       "route": "/api/getSampleList",
       "rewrite": "https://taxcredit-api-func-v2.azurewebsites.net/api/getSampleList",
+      "methods": ["GET", "OPTIONS"],
+      "allowedRoles": ["anonymous"]
+    },
+    {
+      "route": "/api/getSampleList/*",
+      "rewrite": "https://taxcredit-api-func-v2.azurewebsites.net/api/getSampleList/{rest}",
+      "methods": ["GET", "OPTIONS"],
       "allowedRoles": ["anonymous"]
     },
     {
@@ -19,5 +26,8 @@
     "404": {
       "rewrite": "/index.html"
     }
+  },
+  "mimeTypes": {
+    ".json": "application/json"
   }
 }
