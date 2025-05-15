@@ -43,30 +43,28 @@ function DataApiTest() {
     // API 엔드포인트 설정
     let endpoint;
     if (apiMode === 0) {
-      // 인코딩 적용 - InsuCompany 정확한 OData 필터링
-      // 영문 필드명 사용 (한글 필드명 대신)
-      const filterColumn = 'sido';  // 한글 '시도' 대신 영문 매핑 사용
-      const filterOp = 'eq';
-      // 필터 값에 작은따옴표를 올바르게 포함시키기 (작은따옴표는 OData에서 문자열 리터럴에 필요)
-      const filterExpr = `${filterColumn} ${filterOp} '${filterValue.replace(/'/g, "''")}'`;
-      const encodedFilter = encodeURIComponent(filterExpr);
+      // InsuCompany API - 정확한 OData 필터링
       
-      // gugun 필터 추가 (웹앱 패턴과 일치)
-      const gugunFilter = "gugun eq '강남구'";
-      const fullFilter = `${encodedFilter} and ${encodeURIComponent(gugunFilter)}`;
+      // 주의: OData 필터에서는 'sido'와 같은 영문 필드명을 사용
+      // 이는 DAB에서 실제 DB 컬럼명인 '시도'로 매핑됨
+      
+      // 1) 먼저 필터 표현식 구성
+      const sidoFilter = `sido eq '${filterValue.replace(/'/g, "''")}'`;
+      const gugunFilter = `gugun eq '강남구'`; 
+      
+      // 2) 전체 필터 표현식을 한 번에 인코딩 (부분 인코딩 X)
+      const fullFilter = encodeURIComponent(`${sidoFilter} and ${gugunFilter}`);
       
       endpoint = `${getBaseUrl()}/data-api/rest/InsuCompany?$filter=${fullFilter}`;
     } else if (apiMode === 1) {
-      // Sample 엔티티 + 필터링 적용 
-      // 영문 필드명 사용
-      const filterColumn = 'sido';  // 한글 '시도' 대신 영문 매핑 사용
-      const filterOp = 'eq';
-      const filterExpr = `${filterColumn} ${filterOp} '${filterValue.replace(/'/g, "''")}'`;
-      const encodedFilter = encodeURIComponent(filterExpr);
+      // Sample 엔티티 API
       
-      // gugun 필터 추가 (웹앱 패턴과 일치)
-      const gugunFilter = "gugun eq '강남구'";
-      const fullFilter = `${encodedFilter} and ${encodeURIComponent(gugunFilter)}`;
+      // 1) 먼저 필터 표현식 구성
+      const sidoFilter = `sido eq '${filterValue.replace(/'/g, "''")}'`;
+      const gugunFilter = `gugun eq '강남구'`;
+      
+      // 2) 전체 필터 표현식을 한 번에 인코딩 (부분 인코딩 X)
+      const fullFilter = encodeURIComponent(`${sidoFilter} and ${gugunFilter}`);
       
       endpoint = `${getBaseUrl()}/data-api/rest/Sample?$filter=${fullFilter}&$top=5`;
     } else if (apiMode === 2) {
@@ -79,11 +77,10 @@ function DataApiTest() {
         // 사용자가 직접 URL을 입력했지만 필터가 없는 경우 자동으로 추가
         const separator = directUrl.includes('?') ? '&' : '?';
         
-        // sido 필터
+        // 필터 표현식 구성 후 전체를 한 번에 인코딩
         const sidoFilter = `sido eq '${filterValue.replace(/'/g, "''")}'`;
-        // gugun 필터 추가 (웹앱 패턴과 일치)
-        const gugunFilter = "gugun eq '강남구'";
-        const fullFilter = `${encodeURIComponent(sidoFilter)} and ${encodeURIComponent(gugunFilter)}`;
+        const gugunFilter = `gugun eq '강남구'`;
+        const fullFilter = encodeURIComponent(`${sidoFilter} and ${gugunFilter}`);
         
         userUrl = `${directUrl}${separator}$filter=${fullFilter}`;
       }
@@ -94,11 +91,13 @@ function DataApiTest() {
     const reqInfo = {
       url: endpoint,
       timestamp: new Date().toISOString(),
-      apiMode: getApiModeName()
+      apiMode: getApiModeName(),
+      explanation: "API 요청 정보 - 매핑 필드와 실제 DB 컬럼의 변환에 주의. 'sido'는 DB의 '시도' 컬럼으로 매핑됨"
     };
     setRequestInfo(reqInfo);
     
     console.log(`API 요청: ${endpoint}`);
+    console.log(`주의: 'sido'는 실제 DB에서 '시도' 컬럼으로 매핑됩니다`);
     const start = Date.now();
 
     try {
