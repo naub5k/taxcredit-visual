@@ -94,12 +94,12 @@ function DataApiTest() {
       url: endpoint,
       timestamp: new Date().toISOString(),
       apiMode: getApiModeName(),
-      explanation: "단순화된 필터 방식 시도 - 복합 필터 대신 단일 필터"
+      explanation: "Azure Portal에서 환경 변수 DATABASE_CONNECTION_STRING 확인 필요"
     };
     setRequestInfo(reqInfo);
     
     console.log(`API 요청: ${endpoint}`);
-    console.log(`주의: 필터 구문 단순화하여 시도`);
+    console.log(`계속 400 오류 발생 시 Azure Portal에서 Data API Builder 설정 및 DATABASE_CONNECTION_STRING 환경 변수 확인 필요`);
     const start = Date.now();
 
     try {
@@ -370,6 +370,20 @@ function DataApiTest() {
             <li><strong>매핑 오류</strong>: 연도 필드는 <code>[연도]</code> 형식으로 대괄호를 포함해야 하며 <code>source.columns</code>도 확인</li>
           </ul>
         </div>
+      </div>
+
+      {/* 환경 문제 알림 */}
+      <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded">
+        <h4 className="text-red-700 font-medium">⚠️ Azure 환경 설정 확인 필요</h4>
+        <p className="text-sm text-red-600 mt-1">
+          API가 계속 실패하는 경우 Azure Portal에서 다음을 확인하세요:
+        </p>
+        <ol className="list-decimal list-inside text-xs mt-1 text-red-600 space-y-1">
+          <li><strong>DATA_API_BUILDER 연결</strong>: 서비스가 활성화되어 있고, dab-config.json이 올바른지 확인</li>
+          <li><strong>DATABASE_CONNECTION_STRING</strong>: 환경 변수가 설정되어 있고 DB 접근이 가능한지 확인</li>
+          <li><strong>정적 웹앱 라우팅</strong>: API 경로가 올바르게 구성되어 있는지 확인</li>
+          <li><strong>직접 DB 연결 테스트</strong>: Azure Portal에서 직접 쿼리 테스트 실행</li>
+        </ol>
       </div>
     </div>
   );
