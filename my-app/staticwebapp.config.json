@@ -8,6 +8,13 @@
       "priority": 100
     },
     {
+      "route": "/data-api/*",
+      "allowedRoles": ["anonymous"],
+      "methods": ["GET", "POST", "OPTIONS"],
+      "rewrite": "/data-api-proxy",
+      "priority": 50
+    },
+    {
       "route": "/data-api/rest/InsuSample*",
       "allowedRoles": ["anonymous"],
       "methods": ["GET", "OPTIONS"],

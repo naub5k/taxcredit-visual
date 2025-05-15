@@ -60,7 +60,8 @@
         "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept"
       },
       "allowedRoles": ["anonymous"],
-      "priority": 150
+      "rewrite": "/data-api-proxy",
+      "priority": 50
     },
     {
       "route": "/*",
