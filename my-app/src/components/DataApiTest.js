@@ -43,30 +43,34 @@ function DataApiTest() {
     // API 엔드포인트 설정
     let endpoint;
     if (apiMode === 0) {
-      // InsuCompany API - 정확한 OData 필터링
+      // InsuCompany API - 필터 단순화
       
-      // 주의: OData 필터에서는 'sido'와 같은 영문 필드명을 사용
-      // 이는 DAB에서 실제 DB 컬럼명인 '시도'로 매핑됨
+      // 세 가지 방식으로 시도해보기 (한 번에 하나씩만 주석 해제)
       
-      // 1) 먼저 필터 표현식 구성
-      const sidoFilter = `sido eq '${filterValue.replace(/'/g, "''")}'`;
-      const gugunFilter = `gugun eq '강남구'`; 
+      // 방식 1: 단일 필터만 사용 (sido 필드만 필터링)
+      const filterExpr = `sido eq '${filterValue.replace(/'/g, "''")}'`;
+      const encodedFilter = encodeURIComponent(filterExpr);
+      endpoint = `${getBaseUrl()}/data-api/rest/InsuCompany?$filter=${encodedFilter}`;
       
-      // 2) 전체 필터 표현식을 한 번에 인코딩 (부분 인코딩 X)
-      const fullFilter = encodeURIComponent(`${sidoFilter} and ${gugunFilter}`);
+      // 방식 2: 매개변수로 전달 (gugun은 URL 매개변수로)
+      /*
+      const filterExpr = `sido eq '${filterValue.replace(/'/g, "''")}'`;
+      const encodedFilter = encodeURIComponent(filterExpr);
+      endpoint = `${getBaseUrl()}/data-api/rest/InsuCompany?$filter=${encodedFilter}&gugun=강남구`;
+      */
       
-      endpoint = `${getBaseUrl()}/data-api/rest/InsuCompany?$filter=${fullFilter}`;
+      // 방식 3: 한글 필드명 직접 시도 (영문 매핑 대신)
+      /*
+      const filterExpr = `시도 eq '${filterValue.replace(/'/g, "''")}'`;
+      const encodedFilter = encodeURIComponent(filterExpr);
+      endpoint = `${getBaseUrl()}/data-api/rest/InsuCompany?$filter=${encodedFilter}`;
+      */
+      
     } else if (apiMode === 1) {
-      // Sample 엔티티 API
-      
-      // 1) 먼저 필터 표현식 구성
-      const sidoFilter = `sido eq '${filterValue.replace(/'/g, "''")}'`;
-      const gugunFilter = `gugun eq '강남구'`;
-      
-      // 2) 전체 필터 표현식을 한 번에 인코딩 (부분 인코딩 X)
-      const fullFilter = encodeURIComponent(`${sidoFilter} and ${gugunFilter}`);
-      
-      endpoint = `${getBaseUrl()}/data-api/rest/Sample?$filter=${fullFilter}&$top=5`;
+      // Sample 엔티티도 단순화
+      const filterExpr = `sido eq '${filterValue.replace(/'/g, "''")}'`;
+      const encodedFilter = encodeURIComponent(filterExpr);
+      endpoint = `${getBaseUrl()}/data-api/rest/Sample?$filter=${encodedFilter}&$top=5`;
     } else if (apiMode === 2) {
       // 기존 Function API - 인코딩 적용 (gugun 매개변수 사용)
       endpoint = `${getBaseUrl()}/api/getSampleList?sido=${encodeURIComponent(filterValue)}&gugun=강남구`;
@@ -77,12 +81,10 @@ function DataApiTest() {
         // 사용자가 직접 URL을 입력했지만 필터가 없는 경우 자동으로 추가
         const separator = directUrl.includes('?') ? '&' : '?';
         
-        // 필터 표현식 구성 후 전체를 한 번에 인코딩
-        const sidoFilter = `sido eq '${filterValue.replace(/'/g, "''")}'`;
-        const gugunFilter = `gugun eq '강남구'`;
-        const fullFilter = encodeURIComponent(`${sidoFilter} and ${gugunFilter}`);
-        
-        userUrl = `${directUrl}${separator}$filter=${fullFilter}`;
+        // 단순 필터만 적용
+        const filterExpr = `sido eq '${filterValue.replace(/'/g, "''")}'`;
+        const encodedFilter = encodeURIComponent(filterExpr);
+        userUrl = `${directUrl}${separator}$filter=${encodedFilter}`;
       }
       endpoint = userUrl;
     }
@@ -92,12 +94,12 @@ function DataApiTest() {
       url: endpoint,
       timestamp: new Date().toISOString(),
       apiMode: getApiModeName(),
-      explanation: "API 요청 정보 - 매핑 필드와 실제 DB 컬럼의 변환에 주의. 'sido'는 DB의 '시도' 컬럼으로 매핑됨"
+      explanation: "단순화된 필터 방식 시도 - 복합 필터 대신 단일 필터"
     };
     setRequestInfo(reqInfo);
     
     console.log(`API 요청: ${endpoint}`);
-    console.log(`주의: 'sido'는 실제 DB에서 '시도' 컬럼으로 매핑됩니다`);
+    console.log(`주의: 필터 구문 단순화하여 시도`);
     const start = Date.now();
 
     try {
@@ -218,8 +220,8 @@ function DataApiTest() {
   const getApiEndpoint = () => {
     const base = getBaseUrl();
     switch(apiMode) {
-      case 0: return `${base}/data-api/rest/InsuCompany?$filter=sido eq '${filterValue}' and gugun eq '강남구'`;  // 영문 매핑 사용
-      case 1: return `${base}/data-api/rest/Sample?$filter=sido eq '${filterValue}' and gugun eq '강남구'&$top=5`;  // 영문 매핑 사용
+      case 0: return `${base}/data-api/rest/InsuCompany?$filter=sido eq '${filterValue}'`;  // 단순 필터
+      case 1: return `${base}/data-api/rest/Sample?$filter=sido eq '${filterValue}'&$top=5`;  // 단순 필터
       case 2: return `${base}/api/getSampleList?sido=${filterValue}&gugun=강남구`;
       case 3: return directUrl;
       default: return '';

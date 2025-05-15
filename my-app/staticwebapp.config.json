@@ -14,9 +14,9 @@
       }
     },
     {
-      "route": "/data-api/*",
+      "route": "/data-api/rest/*",
       "allowedRoles": ["anonymous"],
-      "serve": "/data-api/*",
+      "serve": "/data-api/rest/*",
       "methods": ["GET", "OPTIONS"],
       "headers": {
         "Access-Control-Allow-Origin": "*",
@@ -24,6 +24,18 @@
         "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
         "Content-Type": "application/json; charset=utf-8",
         "Cache-Control": "no-cache, no-store, must-revalidate"
+      }
+    },
+    {
+      "route": "/data-api/graphql/*",
+      "allowedRoles": ["anonymous"],
+      "serve": "/data-api/graphql/*",
+      "methods": ["GET", "POST", "OPTIONS"],
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
+        "Content-Type": "application/json; charset=utf-8"
       }
     },
     {
