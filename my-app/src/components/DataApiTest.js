@@ -43,8 +43,12 @@ function DataApiTest() {
     // API 엔드포인트 설정
     let endpoint;
     if (apiMode === 0) {
-      // 인코딩 적용 - 문자열 필터를 명확하게 따옴표로 처리
-      const encodedFilter = encodeURIComponent(`시도 eq '${filterValue}'`);
+      // 인코딩 적용 - InsuCompany 정확한 OData 필터링
+      const filterColumn = '시도';
+      const filterOp = 'eq';
+      // 필터 값에 작은따옴표를 올바르게 포함시키기 (작은따옴표는 OData에서 문자열 리터럴에 필요)
+      const filterExpr = `${filterColumn} ${filterOp} '${filterValue.replace(/'/g, "''")}'`;
+      const encodedFilter = encodeURIComponent(filterExpr);
       endpoint = `${getBaseUrl()}/data-api/rest/InsuCompany?$filter=${encodedFilter}`;
     } else if (apiMode === 1) {
       // Sample 엔티티 + 탑 5개만 조회
@@ -100,20 +104,54 @@ function DataApiTest() {
       const responseText = await response.text();
       setRawResponse(responseText);
       
+      // Content-Type 확인
+      const contentType = response.headers.get('content-type') || '';
+      
       // 상태 코드가 성공이 아니면 오류 표시
       if (!response.ok) {
-        throw new Error(`응답 오류: ${response.status} ${response.statusText}`);
+        // DAB API 응답 형식 확인 (JSON 오류 메시지 포함 여부)
+        let errorDetail = '';
+        try {
+          if (contentType.includes('application/json')) {
+            const errorJson = JSON.parse(responseText);
+            if (errorJson.error) {
+              errorDetail = `: ${errorJson.error.message || errorJson.error.code || JSON.stringify(errorJson.error)}`;
+            }
+          }
+        } catch (e) {
+          // 파싱 실패 시 원시 응답 사용
+          if (responseText.length < 100) {
+            errorDetail = `: ${responseText}`;
+          }
+        }
+        throw new Error(`응답 오류 (${response.status} ${response.statusText})${errorDetail}`);
+      }
+      
+      // HTML 응답 감지
+      if (contentType.includes('text/html')) {
+        throw new Error('HTML 응답을 받았습니다. 이는 일반적으로 라우팅 문제 또는 인증 오류를 나타냅니다.');
       }
       
       try {
         // 텍스트를 JSON으로 파싱 시도
         const result = JSON.parse(responseText);
         
+        // 빈 응답 체크
+        if (!result) {
+          throw new Error('빈 응답을 받았습니다.');
+        }
+        
         // apiMode에 따라 데이터 구조 처리
         let items;
         if (apiMode < 2) {
           // Data API 응답 형식 (value 프로퍼티 안에 배열)
           items = result.value || [];
+          
+          // 빈 배열 체크
+          if (items.length === 0) {
+            console.log('결과가 없습니다. 응답:', result);
+            // 빈 결과는 오류가 아니므로 throw 하지 않음
+          }
         } else if (apiMode === 2) {
           // Function API 응답 형식 (직접 배열)
           items = Array.isArray(result) ? result : [];
