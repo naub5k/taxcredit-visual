@@ -28,6 +28,19 @@
       "priority": 150
     },
     {
+      "route": "/data-api/graphql*",
+      "methods": ["GET", "POST", "OPTIONS"],
+      "headers": {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept"
+      },
+      "allowedRoles": ["anonymous"],
+      "rewrite": "/data-api-proxy",
+      "priority": 30
+    },
+    {
       "route": "/data-api/rest/InsuSample*",
       "methods": ["GET", "OPTIONS"],
       "headers": {

@@ -8,6 +8,19 @@
       "priority": 100
     },
     {
+      "route": "/data-api/graphql*",
+      "allowedRoles": ["anonymous"],
+      "methods": ["GET", "POST", "OPTIONS"],
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
+        "Content-Type": "application/json; charset=utf-8"
+      },
+      "rewrite": "/data-api-proxy",
+      "priority": 30
+    },
+    {
       "route": "/data-api/rest/InsuSample*",
       "allowedRoles": ["anonymous"],
       "methods": ["GET", "OPTIONS"],
@@ -41,18 +54,6 @@
       "methods": ["GET", "POST", "OPTIONS"],
       "rewrite": "/data-api-proxy",
       "priority": 50
-    },
-    {
-      "route": "/data-api/graphql*",
-      "allowedRoles": ["anonymous"],
-      "methods": ["GET", "POST", "OPTIONS"],
-      "headers": {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
-        "Content-Type": "application/json; charset=utf-8"
-      },
-      "priority": 200
     },
     {
       "route": "/*",
