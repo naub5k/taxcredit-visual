@@ -50,7 +50,12 @@ function DataApiTest() {
       // 필터 값에 작은따옴표를 올바르게 포함시키기 (작은따옴표는 OData에서 문자열 리터럴에 필요)
       const filterExpr = `${filterColumn} ${filterOp} '${filterValue.replace(/'/g, "''")}'`;
       const encodedFilter = encodeURIComponent(filterExpr);
-      endpoint = `${getBaseUrl()}/data-api/rest/InsuCompany?$filter=${encodedFilter}`;
+      
+      // gugun 필터 추가 (웹앱 패턴과 일치)
+      const gugunFilter = "gugun eq '강남구'";
+      const fullFilter = `${encodedFilter} and ${encodeURIComponent(gugunFilter)}`;
+      
+      endpoint = `${getBaseUrl()}/data-api/rest/InsuCompany?$filter=${fullFilter}`;
     } else if (apiMode === 1) {
       // Sample 엔티티 + 필터링 적용 
       // 영문 필드명 사용
@@ -58,9 +63,14 @@ function DataApiTest() {
       const filterOp = 'eq';
       const filterExpr = `${filterColumn} ${filterOp} '${filterValue.replace(/'/g, "''")}'`;
       const encodedFilter = encodeURIComponent(filterExpr);
-      endpoint = `${getBaseUrl()}/data-api/rest/Sample?$filter=${encodedFilter}&$top=5`;
+      
+      // gugun 필터 추가 (웹앱 패턴과 일치)
+      const gugunFilter = "gugun eq '강남구'";
+      const fullFilter = `${encodedFilter} and ${encodeURIComponent(gugunFilter)}`;
+      
+      endpoint = `${getBaseUrl()}/data-api/rest/Sample?$filter=${fullFilter}&$top=5`;
     } else if (apiMode === 2) {
-      // 기존 Function API - 인코딩 적용
+      // 기존 Function API - 인코딩 적용 (gugun 매개변수 사용)
       endpoint = `${getBaseUrl()}/api/getSampleList?sido=${encodeURIComponent(filterValue)}&gugun=강남구`;
     } else {
       // 직접 URL을 OData 형식으로 자동 변환 지원
@@ -68,10 +78,14 @@ function DataApiTest() {
       if (directUrl.includes('/InsuCompany') && !directUrl.includes('$filter=') && filterValue) {
         // 사용자가 직접 URL을 입력했지만 필터가 없는 경우 자동으로 추가
         const separator = directUrl.includes('?') ? '&' : '?';
-        const filterColumn = 'sido';  // 영문 매핑 사용
-        const filterExpr = `${filterColumn} eq '${filterValue.replace(/'/g, "''")}'`;
-        const encodedFilter = encodeURIComponent(filterExpr);
-        userUrl = `${directUrl}${separator}$filter=${encodedFilter}`;
+        
+        // sido 필터
+        const sidoFilter = `sido eq '${filterValue.replace(/'/g, "''")}'`;
+        // gugun 필터 추가 (웹앱 패턴과 일치)
+        const gugunFilter = "gugun eq '강남구'";
+        const fullFilter = `${encodeURIComponent(sidoFilter)} and ${encodeURIComponent(gugunFilter)}`;
+        
+        userUrl = `${directUrl}${separator}$filter=${fullFilter}`;
       }
       endpoint = userUrl;
     }
@@ -205,8 +219,8 @@ function DataApiTest() {
   const getApiEndpoint = () => {
     const base = getBaseUrl();
     switch(apiMode) {
-      case 0: return `${base}/data-api/rest/InsuCompany?$filter=sido eq '${filterValue}'`;  // 영문 매핑 사용
-      case 1: return `${base}/data-api/rest/Sample?$filter=sido eq '${filterValue}'&$top=5`;  // 영문 매핑 사용
+      case 0: return `${base}/data-api/rest/InsuCompany?$filter=sido eq '${filterValue}' and gugun eq '강남구'`;  // 영문 매핑 사용
+      case 1: return `${base}/data-api/rest/Sample?$filter=sido eq '${filterValue}' and gugun eq '강남구'&$top=5`;  // 영문 매핑 사용
       case 2: return `${base}/api/getSampleList?sido=${filterValue}&gugun=강남구`;
       case 3: return directUrl;
       default: return '';
