@@ -164,11 +164,11 @@ function DataApiTest() {
       }
       
       // HTML 응답 감지
-      if (contentType.includes('text/html')) {
+      if (contentType && contentType.includes('text/html')) {
         console.warn('HTML 응답 감지: 예상된 JSON 응답 대신 HTML이 반환되었습니다.');
         console.log('응답 내용 확인:', responseText.substring(0, 200));
         
-        if (endpoint.includes('/data-api/')) {
+        if (endpoint && endpoint.includes('/data-api/')) {
           console.error('DAB API가 HTML을 반환했습니다. 환경 변수와 데이터베이스 연결을 확인하세요.');
           throw new Error('데이터베이스 API가 HTML 응답을 반환했습니다. DATABASE_CONNECTION_STRING 환경 변수가 올바르게 설정되었는지 확인하세요.');
         } else {

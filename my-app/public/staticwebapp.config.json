@@ -37,7 +37,7 @@
         "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept"
       },
       "allowedRoles": ["anonymous"],
-      "priority": 200
+      "priority": 100
     },
     {
       "route": "/data-api/rest/Sample*",
@@ -49,7 +49,7 @@
         "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept"
       },
       "allowedRoles": ["anonymous"],
-      "priority": 200
+      "priority": 100
     },
     {
       "route": "/data-api/*",
@@ -60,7 +60,7 @@
         "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept"
       },
       "allowedRoles": ["anonymous"],
-      "priority": 250
+      "priority": 150
     },
     {
       "route": "/*",
