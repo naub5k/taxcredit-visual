@@ -30,22 +30,41 @@
   },
   "entities": {
     "InsuCompany": {
-      "source": "dbo.Insu_sample",
+      "source": {
+        "type": "table",
+        "object": "dbo.Insu_sample",
+        "columns": {
+          "사업장명": { "type": "nvarchar" },
+          "시도": { "type": "nvarchar" },
+          "구군": { "type": "nvarchar" },
+          "[2020]": { "type": "int" },
+          "[2021]": { "type": "int" },
+          "[2022]": { "type": "int" },
+          "[2023]": { "type": "int" },
+          "[2024]": { "type": "int" }
+        }
+      },
       "permissions": [
         {
           "actions": ["read"],
           "role": "anonymous"
         }
       ],
+      "rest": {
+        "methods": ["get"]
+      },
+      "graphql": {
+        "enabled": true
+      },
       "mappings": {
         "사업장명": "사업장명",
         "시도": "시도",
         "구군": "구군",
-        "2020": "2020",
-        "2021": "2021",
-        "2022": "2022",
-        "2023": "2023",
-        "2024": "2024"
+        "2020": "[2020]",
+        "2021": "[2021]",
+        "2022": "[2022]",
+        "2023": "[2023]",
+        "2024": "[2024]"
       }
     },
     "Sample": {
@@ -55,7 +74,13 @@
           "actions": ["read"],
           "role": "anonymous"
         }
-      ]
+      ],
+      "rest": {
+        "methods": ["get"]
+      },
+      "graphql": {
+        "enabled": true
+      }
     }
   }
 } 

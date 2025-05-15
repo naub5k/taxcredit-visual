@@ -8,6 +8,7 @@
 ## 업데이트 내역
 - 2025.04.25: 배포 프로세스 개선 및 테스트
 - 2025.05.02: 프로젝트 폴더 구조 정리 및 재구성
+- 2025.05.15: Azure Static Web Apps 데이터베이스 연결 기능 추가
 
 ## 프로젝트 기술 스택
 
@@ -16,6 +17,7 @@
 - **차트 라이브러리**: Recharts
 - **배포 환경**: Azure Web App
 - **배포 방식**: Git 직접 배포 (azure 리모트)
+- **데이터 액세스**: Azure Static Web Apps 데이터베이스 연결
 
 ## 프로젝트 구조
 
@@ -30,15 +32,25 @@ taxcredit_mobileapp/                # 프로젝트 최상위 디렉토리
 │   ├── src/
 │   │   ├── components/             # React 컴포넌트
 │   │   │   ├── FunnelChart.jsx     # 깔때기형 차트 컴포넌트
-│   │   │   └── RegionList.jsx      # 지역 목록 컴포넌트
+│   │   │   ├── RegionList.jsx      # 지역 목록 컴포넌트
+│   │   │   └── DataApiSample.js    # 데이터베이스 연결 샘플 컴포넌트
 │   │   ├── data/                   # 데이터 모델
 │   │   │   └── dummyRefinementData.js # 샘플 데이터
+│   │   ├── utils/                  # 유틸리티 함수
+│   │   │   └── dataApiService.js   # 데이터베이스 API 서비스
 │   │   ├── App.js                  # 메인 앱 컴포넌트
 │   │   └── index.js                # 진입점
 │   ├── .gitignore                  # Git 무시 파일 목록
 │   ├── package.json                # 의존성 및 스크립트 정의
 │   ├── postcss.config.js           # PostCSS 설정
 │   └── tailwind.config.js          # TailwindCSS 설정
+│
+├── api-func/                       # Azure Functions API (기존)
+│   ├── getSampleList/              # 샘플 데이터 조회 함수
+│   └── utils/                      # API 유틸리티 함수
+│
+├── swa-db-connections/             # Static Web Apps 데이터베이스 연결 설정
+│   └── staticwebapp.database.config.json # 데이터베이스 연결 구성 파일
 │
 ├── scripts/                        # 모든 자동화 스크립트
 │   ├── deploy.ps1                  # Azure 배포 PowerShell 스크립트
@@ -82,6 +94,54 @@ taxcredit_mobileapp/                # 프로젝트 최상위 디렉토리
    npm start
    ```
    애플리케이션이 http://localhost:3000 에서 실행됩니다.
+
+## 데이터베이스 연결 설정 (신규)
+
+이 프로젝트는 Azure Static Web Apps의 데이터베이스 연결 기능을 활용하여 백엔드 코드 없이 데이터베이스 직접 액세스를 지원합니다.
+
+### 로컬 개발 환경 설정
+
+1. Static Web Apps CLI 설치:
+   ```bash
+   npm install -g @azure/static-web-apps-cli
+   ```
+
+2. 연결 문자열 환경 변수 설정:
+   ```bash
+   # Windows
+   set DATABASE_CONNECTION_STRING=Server=naub5k.database.windows.net;Database=CleanDB;User Id=naub5k;Password=dunkin3106UB!;Encrypt=true
+
+   # Linux/Mac
+   export DATABASE_CONNECTION_STRING=Server=naub5k.database.windows.net;Database=CleanDB;User Id=naub5k;Password=dunkin3106UB!;Encrypt=true
+   ```
+
+3. 로컬 Static Web Apps 실행:
+   ```bash
+   swa start my-app/build --data-api-location swa-db-connections
+   ```
+
+### 데이터 API 엔드포인트
+
+데이터베이스 연결 설정 후 다음 엔드포인트가 사용 가능합니다:
+
+- **REST API**: `/data-api/rest/Sample`
+- **GraphQL API**: `/data-api/graphql`
+
+### 샘플 컴포넌트
+
+`DataApiSample` 컴포넌트는 Azure Static Web Apps 데이터베이스 연결을 활용한 예제입니다:
+
+```jsx
+import { DataApiSample } from './components/DataApiSample';
+
+function App() {
+  return (
+    <div className="App">
+      <DataApiSample />
+    </div>
+  );
+}
+```
 
 ## 배포 방법
 

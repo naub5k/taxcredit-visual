@@ -5,12 +5,13 @@ const sql = require('mssql');
 module.exports = async function (context, req) {
   context.log('getSampleList 함수가 실행되었습니다.', req.method);
   
-  // CORS 헤더 정의
+  // CORS 헤더 정의 (개선된 버전)
   const corsHeaders = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type'
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
+    'Cache-Control': 'no-cache, no-store'
   };
   
   // OPTIONS 요청 처리 (CORS preflight)
@@ -31,25 +32,34 @@ module.exports = async function (context, req) {
     
     context.log(`파라미터 수신: sido=${sido}, gugun=${gugun}`);
     
-    // 쿼리 구성 - N 접두사 직접 SQL에 포함
-    let query;
+    // 쿼리 구성 - 수정된 버전 (파라미터화)
+    let query = `SELECT 사업장명, 시도, 구군, [2020], [2021], [2022], [2023], [2024] FROM Insu_sample WHERE 1=1`;
     let params = [];
     
-    if (sido && gugun) {
-      // 시도와 구군 모두 있는 경우 - 수정된 쿼리
-      query = `SELECT 사업장명, 시도, 구군, [2020], [2021], [2022], [2023], [2024] FROM Insu_sample WHERE 시도 = N'${sido}' AND 구군 = N'${gugun}'`;
-    } else if (sido) {
-      // 시도만 있는 경우
-      query = `SELECT 사업장명, 시도, 구군, [2020], [2021], [2022], [2023], [2024] FROM Insu_sample WHERE 시도 = N'${sido}'`;
+    if (sido) {
+      query += ` AND 시도 = @sido`;
+      params.push({
+        name: 'sido',
+        type: sql.NVarChar,
+        value: sido
+      });
     } else {
-      // 기본 쿼리
-      query = `SELECT 사업장명, 시도, 구군, [2020], [2021], [2022], [2023], [2024] FROM Insu_sample WHERE 시도 IN (N'서울특별시', N'경기도')`;
+      query += ` AND 시도 IN (N'서울특별시', N'경기도')`;
+    }
+    
+    if (gugun) {
+      query += ` AND 구군 = @gugun`;
+      params.push({
+        name: 'gugun',
+        type: sql.NVarChar,
+        value: gugun
+      });
     }
     
     context.log('데이터베이스 쿼리 실행 중:', query);
     
-    // 쿼리 실행 (직접 쿼리 사용)
-    const result = await executeQuery(query, []);
+    // 쿼리 실행 (파라미터화된 쿼리 사용)
+    const result = await executeQuery(query, params);
     
     context.log(`쿼리 결과: ${result.recordset.length}개 레코드 조회됨`);
 
@@ -69,7 +79,8 @@ module.exports = async function (context, req) {
       headers: corsHeaders,
       body: {
         error: "데이터를 가져오는 중 오류가 발생했습니다.",
-        details: err.message
+        details: err.message,
+        timestamp: new Date().toISOString()
       }
     };
   }

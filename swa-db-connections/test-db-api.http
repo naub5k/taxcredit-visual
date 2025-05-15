@@ -1,0 +1,26 @@
+### 데이터 API 테스트 파일
+### VS Code의 REST Client 확장이나 Postman에서 사용 가능합니다.
+
+### 변수 설정
+@baseUrl = https://polite-desert-03a31df00.azurestaticapps.net
+@dataApiPath = /data-api/rest
+
+### 1. InsuCompany 엔티티 조회 (필터링: 서울특별시)
+GET {{baseUrl}}{{dataApiPath}}/InsuCompany?$filter=시도 eq '서울특별시'
+Accept: application/json
+Content-Type: application/json
+
+### 2. Sample 엔티티 상위 5개 조회
+GET {{baseUrl}}{{dataApiPath}}/Sample?$top=5
+Accept: application/json
+Content-Type: application/json
+
+### 3. Function API 테스트 (서울특별시, 강남구)
+GET {{baseUrl}}/api/getSampleList?sido=서울특별시&gugun=강남구
+Accept: application/json
+Content-Type: application/json
+
+### 4. 직접 Function API 엔드포인트 테스트
+GET https://taxcredit-api-func-v2.azurewebsites.net/api/getSampleList?sido=서울특별시&gugun=강남구
+Accept: application/json
+Content-Type: application/json 

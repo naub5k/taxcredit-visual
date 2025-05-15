@@ -14,6 +14,8 @@ function DataApiTest() {
   const [timeTaken, setTimeTaken] = useState(0);
   const [directUrl, setDirectUrl] = useState('');
   const [rawResponse, setRawResponse] = useState('');
+  const [filterValue, setFilterValue] = useState('서울특별시');
+  const [requestInfo, setRequestInfo] = useState({});
 
   // API 전환 핸들러
   const toggleApi = () => {
@@ -36,27 +38,63 @@ function DataApiTest() {
     setError('');
     setData([]);
     setRawResponse('');
+    setRequestInfo({});
     
     // API 엔드포인트 설정
     let endpoint;
     if (apiMode === 0) {
-      // InsuCompany 엔티티 + 필터링 추가
-      endpoint = `${getBaseUrl()}/data-api/rest/InsuCompany?$filter=시도 eq '서울특별시'`;
+      // 인코딩 적용 - 문자열 필터를 명확하게 따옴표로 처리
+      const encodedFilter = encodeURIComponent(`시도 eq '${filterValue}'`);
+      endpoint = `${getBaseUrl()}/data-api/rest/InsuCompany?$filter=${encodedFilter}`;
     } else if (apiMode === 1) {
       // Sample 엔티티 + 탑 5개만 조회
       endpoint = `${getBaseUrl()}/data-api/rest/Sample?$top=5`;
     } else if (apiMode === 2) {
-      // 기존 Function API
-      endpoint = `${getBaseUrl()}/api/getSampleList?sido=서울특별시&gugun=강남구`;
+      // 기존 Function API - 인코딩 적용
+      endpoint = `${getBaseUrl()}/api/getSampleList?sido=${encodeURIComponent(filterValue)}&gugun=강남구`;
     } else {
       endpoint = directUrl; // 사용자가 입력한 직접 URL 사용
     }
 
+    // 디버깅 정보 기록
+    const reqInfo = {
+      url: endpoint,
+      timestamp: new Date().toISOString(),
+      apiMode: getApiModeName()
+    };
+    setRequestInfo(reqInfo);
+    
     console.log(`API 요청: ${endpoint}`);
     const start = Date.now();
 
     try {
-      const response = await fetch(endpoint);
+      const fetchOptions = {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store',
+          'Pragma': 'no-cache'
+        },
+        cache: 'no-store',
+        credentials: 'omit'
+      };
+      
+      const response = await fetch(endpoint, fetchOptions);
+      
+      // 응답 헤더 기록
+      const headerObj = {};
+      response.headers.forEach((value, key) => {
+        headerObj[key] = value;
+      });
+      
+      // 요청 정보 업데이트
+      setRequestInfo(prev => ({
+        ...prev,
+        status: response.status,
+        statusText: response.statusText,
+        headers: headerObj
+      }));
       
       // 응답 원시 텍스트 먼저 보존
       const responseText = await response.text();
@@ -70,7 +108,19 @@ function DataApiTest() {
       try {
         // 텍스트를 JSON으로 파싱 시도
         const result = JSON.parse(responseText);
-        const items = (apiMode < 2 || apiMode === 3) ? (result.value || []) : result;
+        
+        // apiMode에 따라 데이터 구조 처리
+        let items;
+        if (apiMode < 2) {
+          // Data API 응답 형식 (value 프로퍼티 안에 배열)
+          items = result.value || [];
+        } else if (apiMode === 2) {
+          // Function API 응답 형식 (직접 배열)
+          items = Array.isArray(result) ? result : [];
+        } else {
+          // 직접 URL 테스트 - 구조 추정
+          items = result.value || (Array.isArray(result) ? result : []);
+        }
         
         setData(items);
       } catch (jsonError) {
@@ -99,10 +149,11 @@ function DataApiTest() {
 
   // 현재 API 엔드포인트 경로 반환
   const getApiEndpoint = () => {
+    const base = getBaseUrl();
     switch(apiMode) {
-      case 0: return '/data-api/rest/InsuCompany?$filter=시도 eq \'서울특별시\'';
-      case 1: return '/data-api/rest/Sample?$top=5';
-      case 2: return '/api/getSampleList?sido=서울특별시&gugun=강남구';
+      case 0: return `${base}/data-api/rest/InsuCompany?$filter=시도 eq '${filterValue}'`;
+      case 1: return `${base}/data-api/rest/Sample?$top=5`;
+      case 2: return `${base}/api/getSampleList?sido=${filterValue}&gugun=강남구`;
       case 3: return directUrl;
       default: return '';
     }
@@ -127,6 +178,28 @@ function DataApiTest() {
           {loading ? '로딩 중...' : '데이터 가져오기'}
         </button>
       </div>
+
+      {/* 필터 설정 */}
+      {(apiMode === 0 || apiMode === 2) && (
+        <div className="mt-2">
+          <label className="block text-sm font-medium text-gray-700 mb-1">시도 필터:</label>
+          <div className="flex">
+            <input
+              type="text"
+              value={filterValue}
+              onChange={(e) => setFilterValue(e.target.value)}
+              className="flex-1 rounded-l border-gray-300 shadow-sm px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="서울특별시"
+            />
+            <button
+              onClick={fetchData}
+              className="bg-blue-500 text-white px-4 py-2 rounded-r border-l-0"
+            >
+              적용
+            </button>
+          </div>
+        </div>
+      )}
 
       {apiMode === 3 && (
         <div className="mt-2">
@@ -155,6 +228,18 @@ function DataApiTest() {
         {timeTaken > 0 && <p className="text-blue-600">⏱ 응답 시간: {timeTaken}ms</p>}
         {error && <p className="text-red-600">❌ 오류: {error}</p>}
       </div>
+
+      {/* 요청 정보 */}
+      {Object.keys(requestInfo).length > 0 && (
+        <div className="mt-4">
+          <details>
+            <summary className="font-medium cursor-pointer">요청 정보</summary>
+            <div className="bg-gray-100 p-3 rounded-md overflow-auto max-h-32 text-xs mt-2">
+              <pre>{JSON.stringify(requestInfo, null, 2)}</pre>
+            </div>
+          </details>
+        </div>
+      )}
 
       {/* 원시 응답 데이터 */}
       {rawResponse && (
@@ -210,10 +295,10 @@ function DataApiTest() {
         <div className="mt-2 p-2 bg-yellow-50 rounded-md border border-yellow-200">
           <h5 className="text-yellow-800 font-medium">⚠️ 문제 해결 팁</h5>
           <ul className="list-disc list-inside text-xs mt-1 text-yellow-700">
-            <li><strong>400 오류</strong>: OData 구문 확인 - <code>$filter=컬럼명 eq '값'</code> 형식 사용</li>
-            <li><strong>데이터베이스 오류</strong>: Portal에서 연결 설정 및 테이블 권한 확인</li>
-            <li><strong>HTML 응답</strong>: Function App에 직접 접근 확인 (https://taxcredit-api-func-v2.azurewebsites.net/api/getSampleList)</li>
-            <li><strong>URL 인코딩</strong>: 특수문자를 URL 인코딩으로 처리 (<code>공백</code> → <code>%20</code>, <code>'</code> → <code>%27</code>)</li>
+            <li><strong>400 오류</strong>: OData 구문 확인 - <code>$filter=컬럼명 eq '값'</code> 형식의 URL 인코딩, 특히 작은따옴표 주의</li>
+            <li><strong>데이터베이스 오류</strong>: Azure Portal에서 데이터베이스 연결 설정을 확인하세요</li>
+            <li><strong>HTML 응답</strong>: Function App CORS 설정과 라우팅 확인 필요</li>
+            <li><strong>매핑 오류</strong>: 연도 필드는 <code>[연도]</code> 형식으로 대괄호를 포함해야 하며 <code>source.columns</code>도 확인</li>
           </ul>
         </div>
       </div>
