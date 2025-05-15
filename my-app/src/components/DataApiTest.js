@@ -5,8 +5,8 @@ import React, { useState } from 'react';
  * Static Web Apps 데이터베이스 연결(data-api)과 기존 API 함수를 비교 테스트합니다.
  */
 function DataApiTest() {
-  // API 선택 상태 (true: data-api, false: 기존 함수)
-  const [useDataApi, setUseDataApi] = useState(true);
+  // API 선택 상태 (0: InsuCompany, 1: Sample, 2: 기존 함수)
+  const [apiMode, setApiMode] = useState(0);
   // 데이터 및 UI 상태
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -14,7 +14,14 @@ function DataApiTest() {
   const [timeTaken, setTimeTaken] = useState(0);
 
   // API 전환 핸들러
-  const toggleApi = () => setUseDataApi(prev => !prev);
+  const toggleApi = () => {
+    setApiMode((prev) => (prev + 1) % 3);
+  };
+
+  // 현재 호스트 가져오기
+  const getBaseUrl = () => {
+    return window.location.origin;
+  };
 
   // 데이터 가져오기 함수
   const fetchData = async () => {
@@ -22,10 +29,15 @@ function DataApiTest() {
     setError('');
     setData([]);
     
-    // API 엔드포인트 설정 (data-api 또는 기존 함수)
-    const endpoint = useDataApi
-      ? '/data-api/rest/InsuCompany' // 수정: Sample -> InsuCompany
-      : '/api/getSampleList?sido=서울특별시&gugun=강남구';
+    // API 엔드포인트 설정
+    let endpoint;
+    if (apiMode === 0) {
+      endpoint = `${getBaseUrl()}/data-api/rest/InsuCompany`; // InsuCompany 엔티티 사용
+    } else if (apiMode === 1) {
+      endpoint = `${getBaseUrl()}/data-api/rest/Sample`; // Sample 엔티티 사용
+    } else {
+      endpoint = `${getBaseUrl()}/api/getSampleList?sido=서울특별시&gugun=강남구`; // 기존 Function API
+    }
 
     console.log(`API 요청: ${endpoint}`);
     const start = Date.now();
@@ -39,7 +51,7 @@ function DataApiTest() {
       
       const result = await response.json();
       // data-api 응답은 'value' 속성에 배열로 옴
-      const items = useDataApi ? (result.value || []) : result;
+      const items = apiMode < 2 ? (result.value || []) : result;
       
       setData(items);
       setTimeTaken(Date.now() - start);
@@ -48,6 +60,26 @@ function DataApiTest() {
       setError(err.message || '데이터를 가져오는 중 오류가 발생했습니다');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 현재 API 모드명 반환
+  const getApiModeName = () => {
+    switch(apiMode) {
+      case 0: return 'Data API (InsuCompany)';
+      case 1: return 'Data API (Sample)';
+      case 2: return 'Function API';
+      default: return 'Unknown';
+    }
+  };
+
+  // 현재 API 엔드포인트 경로 반환
+  const getApiEndpoint = () => {
+    switch(apiMode) {
+      case 0: return '/data-api/rest/InsuCompany';
+      case 1: return '/data-api/rest/Sample';
+      case 2: return '/api/getSampleList?sido=서울특별시&gugun=강남구';
+      default: return '';
     }
   };
 
@@ -60,7 +92,7 @@ function DataApiTest() {
           onClick={toggleApi} 
           className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition"
         >
-          API 전환 (현재: {useDataApi ? 'Data API' : 'Function API'})
+          API 전환 (현재: {getApiModeName()})
         </button>
         <button 
           onClick={fetchData} 
@@ -114,7 +146,8 @@ function DataApiTest() {
       <div className="bg-gray-50 p-3 rounded text-sm text-gray-600">
         <h4 className="font-medium">API 정보</h4>
         <p>
-          현재 API: <span className="font-mono">{useDataApi ? '/data-api/rest/InsuCompany' : '/api/getSampleList'}</span><br />
+          현재 API: <span className="font-mono">{getApiEndpoint()}</span><br />
+          호스트: <span className="font-mono">{getBaseUrl()}</span><br />
           이 컴포넌트는 Azure Static Web Apps 데이터베이스 연결과 기존 API Function을 비교 테스트합니다.
         </p>
       </div>
