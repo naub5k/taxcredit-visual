@@ -46,40 +46,85 @@
       },
       "permissions": [
         {
-          "actions": ["read"],
+          "actions": ["read", "filter"],
           "role": "anonymous"
         }
       ],
       "rest": {
-        "methods": ["get"]
+        "methods": ["get"],
+        "enabled": true
       },
       "graphql": {
         "enabled": true
       },
       "mappings": {
         "사업장명": "사업장명",
+        "companyName": "사업장명",
         "시도": "시도",
+        "region": "시도",
+        "sido": "시도",
         "구군": "구군",
+        "district": "구군",
+        "gugun": "구군",
         "2020": "[2020]",
         "2021": "[2021]",
         "2022": "[2022]",
         "2023": "[2023]",
-        "2024": "[2024]"
+        "2024": "[2024]",
+        "year2020": "[2020]",
+        "year2021": "[2021]",
+        "year2022": "[2022]",
+        "year2023": "[2023]",
+        "year2024": "[2024]"
       }
     },
     "Sample": {
-      "source": "dbo.Insu_sample",
+      "source": {
+        "type": "table",
+        "object": "dbo.Insu_sample",
+        "columns": {
+          "사업장명": { "type": "nvarchar" },
+          "시도": { "type": "nvarchar" },
+          "구군": { "type": "nvarchar" },
+          "[2020]": { "type": "int" },
+          "[2021]": { "type": "int" },
+          "[2022]": { "type": "int" },
+          "[2023]": { "type": "int" },
+          "[2024]": { "type": "int" }
+        }
+      },
       "permissions": [
         {
-          "actions": ["read"],
+          "actions": ["read", "filter"],
           "role": "anonymous"
         }
       ],
       "rest": {
-        "methods": ["get"]
+        "methods": ["get"],
+        "enabled": true
       },
       "graphql": {
         "enabled": true
+      },
+      "mappings": {
+        "사업장명": "사업장명",
+        "companyName": "사업장명",
+        "시도": "시도",
+        "region": "시도",
+        "sido": "시도",
+        "구군": "구군",
+        "district": "구군",
+        "gugun": "구군",
+        "2020": "[2020]",
+        "2021": "[2021]",
+        "2022": "[2022]",
+        "2023": "[2023]",
+        "2024": "[2024]",
+        "year2020": "[2020]",
+        "year2021": "[2021]",
+        "year2022": "[2022]",
+        "year2023": "[2023]",
+        "year2024": "[2024]"
       }
     }
   }

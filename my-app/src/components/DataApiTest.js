@@ -44,20 +44,36 @@ function DataApiTest() {
     let endpoint;
     if (apiMode === 0) {
       // 인코딩 적용 - InsuCompany 정확한 OData 필터링
-      const filterColumn = '시도';
+      // 영문 필드명 사용 (한글 필드명 대신)
+      const filterColumn = 'sido';  // 한글 '시도' 대신 영문 매핑 사용
       const filterOp = 'eq';
       // 필터 값에 작은따옴표를 올바르게 포함시키기 (작은따옴표는 OData에서 문자열 리터럴에 필요)
       const filterExpr = `${filterColumn} ${filterOp} '${filterValue.replace(/'/g, "''")}'`;
       const encodedFilter = encodeURIComponent(filterExpr);
       endpoint = `${getBaseUrl()}/data-api/rest/InsuCompany?$filter=${encodedFilter}`;
     } else if (apiMode === 1) {
-      // Sample 엔티티 + 탑 5개만 조회
-      endpoint = `${getBaseUrl()}/data-api/rest/Sample?$top=5`;
+      // Sample 엔티티 + 필터링 적용 
+      // 영문 필드명 사용
+      const filterColumn = 'sido';  // 한글 '시도' 대신 영문 매핑 사용
+      const filterOp = 'eq';
+      const filterExpr = `${filterColumn} ${filterOp} '${filterValue.replace(/'/g, "''")}'`;
+      const encodedFilter = encodeURIComponent(filterExpr);
+      endpoint = `${getBaseUrl()}/data-api/rest/Sample?$filter=${encodedFilter}&$top=5`;
     } else if (apiMode === 2) {
       // 기존 Function API - 인코딩 적용
       endpoint = `${getBaseUrl()}/api/getSampleList?sido=${encodeURIComponent(filterValue)}&gugun=강남구`;
     } else {
-      endpoint = directUrl; // 사용자가 입력한 직접 URL 사용
+      // 직접 URL을 OData 형식으로 자동 변환 지원
+      let userUrl = directUrl;
+      if (directUrl.includes('/InsuCompany') && !directUrl.includes('$filter=') && filterValue) {
+        // 사용자가 직접 URL을 입력했지만 필터가 없는 경우 자동으로 추가
+        const separator = directUrl.includes('?') ? '&' : '?';
+        const filterColumn = 'sido';  // 영문 매핑 사용
+        const filterExpr = `${filterColumn} eq '${filterValue.replace(/'/g, "''")}'`;
+        const encodedFilter = encodeURIComponent(filterExpr);
+        userUrl = `${directUrl}${separator}$filter=${encodedFilter}`;
+      }
+      endpoint = userUrl;
     }
 
     // 디버깅 정보 기록
@@ -189,8 +205,8 @@ function DataApiTest() {
   const getApiEndpoint = () => {
     const base = getBaseUrl();
     switch(apiMode) {
-      case 0: return `${base}/data-api/rest/InsuCompany?$filter=시도 eq '${filterValue}'`;
-      case 1: return `${base}/data-api/rest/Sample?$top=5`;
+      case 0: return `${base}/data-api/rest/InsuCompany?$filter=sido eq '${filterValue}'`;  // 영문 매핑 사용
+      case 1: return `${base}/data-api/rest/Sample?$filter=sido eq '${filterValue}'&$top=5`;  // 영문 매핑 사용
       case 2: return `${base}/api/getSampleList?sido=${filterValue}&gugun=강남구`;
       case 3: return directUrl;
       default: return '';
