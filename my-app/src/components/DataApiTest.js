@@ -43,34 +43,37 @@ function DataApiTest() {
     // API 엔드포인트 설정
     let endpoint;
     if (apiMode === 0) {
-      // InsuCompany API - 필터 단순화
+      // InsuCompany API - 다양한 필터 테스트
       
-      // 세 가지 방식으로 시도해보기 (한 번에 하나씩만 주석 해제)
-      
-      // 방식 1: 단일 필터만 사용 (sido 필드만 필터링)
-      const filterExpr = `sido eq '${filterValue.replace(/'/g, "''")}'`;
+      // 테스트 1: 영어 필드명 + 영어 값 (테스트용)
+      const testEnglishValue = filterValue === '서울특별시' ? 'Seoul' : filterValue;
+      const filterExpr = `sido eq '${testEnglishValue}'`;
       const encodedFilter = encodeURIComponent(filterExpr);
       endpoint = `${getBaseUrl()}/data-api/rest/InsuCompany?$filter=${encodedFilter}`;
       
-      // 방식 2: 매개변수로 전달 (gugun은 URL 매개변수로)
+      // 다음 시도는 주석처리
       /*
+      // 테스트 2: 영어 필드명 + 한글 값 (기존 방식)
       const filterExpr = `sido eq '${filterValue.replace(/'/g, "''")}'`;
       const encodedFilter = encodeURIComponent(filterExpr);
-      endpoint = `${getBaseUrl()}/data-api/rest/InsuCompany?$filter=${encodedFilter}&gugun=강남구`;
+      endpoint = `${getBaseUrl()}/data-api/rest/InsuCompany?$filter=${encodedFilter}`;
       */
       
-      // 방식 3: 한글 필드명 직접 시도 (영문 매핑 대신)
       /*
+      // 테스트 3: 한글 필드명 직접 시도
       const filterExpr = `시도 eq '${filterValue.replace(/'/g, "''")}'`;
       const encodedFilter = encodeURIComponent(filterExpr);
       endpoint = `${getBaseUrl()}/data-api/rest/InsuCompany?$filter=${encodedFilter}`;
       */
       
+      /*
+      // 테스트 4: 필터 없이 전체 데이터 요청
+      endpoint = `${getBaseUrl()}/data-api/rest/InsuCompany`;
+      */
+      
     } else if (apiMode === 1) {
-      // Sample 엔티티도 단순화
-      const filterExpr = `sido eq '${filterValue.replace(/'/g, "''")}'`;
-      const encodedFilter = encodeURIComponent(filterExpr);
-      endpoint = `${getBaseUrl()}/data-api/rest/Sample?$filter=${encodedFilter}&$top=5`;
+      // Sample 엔티티 - 필터 없이 시도
+      endpoint = `${getBaseUrl()}/data-api/rest/Sample?$top=5`;
     } else if (apiMode === 2) {
       // 기존 Function API - 웹앱과 동일한 방식으로 호출
       // 중요: 이 API는 웹앱에서 정상 작동하는 방식 그대로 호출
@@ -87,8 +90,9 @@ function DataApiTest() {
         // 사용자가 직접 URL을 입력했지만 필터가 없는 경우 자동으로 추가
         const separator = directUrl.includes('?') ? '&' : '?';
         
-        // 단순 필터만 적용
-        const filterExpr = `sido eq '${filterValue.replace(/'/g, "''")}'`;
+        // 영어 값으로 테스트
+        const testEnglishValue = filterValue === '서울특별시' ? 'Seoul' : filterValue;
+        const filterExpr = `sido eq '${testEnglishValue}'`;
         const encodedFilter = encodeURIComponent(filterExpr);
         userUrl = `${directUrl}${separator}$filter=${encodedFilter}`;
       }
@@ -102,15 +106,15 @@ function DataApiTest() {
       apiMode: getApiModeName(),
       explanation: apiMode === 2 ? 
         "웹앱에서 정상 작동하는 Function API 동일 방식 호출" : 
-        "Azure Portal에서 환경 변수 DATABASE_CONNECTION_STRING 확인 필요"
+        "영어 필드값으로 테스트 중 (한글→영어 변환)"
     };
     setRequestInfo(reqInfo);
     
     console.log(`API 요청: ${endpoint}`);
     if (apiMode === 2) {
       console.log(`웹앱 호환 모드로 Function API 호출 중...`);
-    } else {
-      console.log(`계속 400 오류 발생 시 Azure Portal에서 Data API Builder 설정 및 DATABASE_CONNECTION_STRING 환경 변수 확인 필요`);
+    } else if (apiMode <= 1) {
+      console.log(`[테스트 모드] 한글→영어 값으로 변환하여 시도`);
     }
     const start = Date.now();
 
