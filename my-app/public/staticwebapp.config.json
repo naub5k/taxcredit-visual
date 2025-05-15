@@ -13,7 +13,7 @@
   ],
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/api/getSampleList"]
+    "exclude": ["/api/*", "/data-api/*", "/images/*", "/*.ico", "/*.png", "/*.svg"]
   },
   "responseOverrides": {
     "404": {
