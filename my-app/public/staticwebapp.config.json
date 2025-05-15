@@ -7,7 +7,8 @@
       "headers": {
         "Content-Type": "application/json"
       },
-      "allowedRoles": ["anonymous"]
+      "allowedRoles": ["anonymous"],
+      "priority": 100
     },
     {
       "route": "/api/getSampleList/*",
@@ -16,24 +17,56 @@
       "headers": {
         "Content-Type": "application/json"
       },
-      "allowedRoles": ["anonymous"]
+      "allowedRoles": ["anonymous"],
+      "priority": 100
     },
     {
       "route": "/api/*",
       "headers": {
         "Content-Type": "application/json"
-      }
+      },
+      "priority": 150
+    },
+    {
+      "route": "/data-api/rest/InsuCompany*",
+      "methods": ["GET", "OPTIONS"],
+      "headers": {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept"
+      },
+      "allowedRoles": ["anonymous"],
+      "priority": 200
+    },
+    {
+      "route": "/data-api/rest/Sample*",
+      "methods": ["GET", "OPTIONS"],
+      "headers": {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept"
+      },
+      "allowedRoles": ["anonymous"],
+      "priority": 200
     },
     {
       "route": "/data-api/*",
       "headers": {
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept"
+      },
+      "allowedRoles": ["anonymous"],
+      "priority": 250
     },
     {
       "route": "/*",
       "serve": "/index.html",
-      "statusCode": 200
+      "statusCode": 200,
+      "priority": 300
     }
   ],
   "navigationFallback": {

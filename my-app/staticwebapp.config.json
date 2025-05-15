@@ -4,12 +4,12 @@
       "route": "/api/getSampleList",
       "allowedRoles": ["anonymous"],
       "serve": "https://taxcredit-api-func-v2.azurewebsites.net/api/getSampleList",
-      "methods": ["GET", "OPTIONS"]
+      "methods": ["GET", "OPTIONS"],
+      "priority": 100
     },
     {
       "route": "/data-api/rest/InsuCompany*",
       "allowedRoles": ["anonymous"],
-      "serve": "/data-api/rest/InsuCompany",
       "methods": ["GET", "OPTIONS"],
       "headers": {
         "Access-Control-Allow-Origin": "*",
@@ -17,12 +17,12 @@
         "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
         "Content-Type": "application/json; charset=utf-8",
         "Cache-Control": "no-cache, no-store, must-revalidate"
-      }
+      },
+      "priority": 200
     },
     {
       "route": "/data-api/rest/Sample*",
       "allowedRoles": ["anonymous"],
-      "serve": "/data-api/rest/Sample",
       "methods": ["GET", "OPTIONS"],
       "headers": {
         "Access-Control-Allow-Origin": "*",
@@ -30,24 +30,26 @@
         "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
         "Content-Type": "application/json; charset=utf-8",
         "Cache-Control": "no-cache, no-store, must-revalidate"
-      }
+      },
+      "priority": 200
     },
     {
       "route": "/data-api/graphql*",
       "allowedRoles": ["anonymous"],
-      "serve": "/data-api/graphql",
       "methods": ["GET", "POST", "OPTIONS"],
       "headers": {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
         "Content-Type": "application/json; charset=utf-8"
-      }
+      },
+      "priority": 200
     },
     {
       "route": "/*",
       "serve": "/index.html",
-      "statusCode": 200
+      "statusCode": 200,
+      "priority": 300
     }
   ],
   "navigationFallback": {
