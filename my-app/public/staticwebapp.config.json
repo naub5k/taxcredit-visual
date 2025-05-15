@@ -3,13 +3,19 @@
     {
       "route": "/api/getSampleList",
       "rewrite": "https://taxcredit-api-func-v2.azurewebsites.net/api/getSampleList",
-      "methods": ["GET", "OPTIONS"],
+      "methods": ["GET", "OPTIONS", "POST"],
+      "headers": {
+        "Content-Type": "application/json"
+      },
       "allowedRoles": ["anonymous"]
     },
     {
       "route": "/api/getSampleList/*",
-      "rewrite": "https://taxcredit-api-func-v2.azurewebsites.net/api/getSampleList/{rest}",
-      "methods": ["GET", "OPTIONS"],
+      "rewrite": "https://taxcredit-api-func-v2.azurewebsites.net/api/getSampleList/*",
+      "methods": ["GET", "OPTIONS", "POST"],
+      "headers": {
+        "Content-Type": "application/json"
+      },
       "allowedRoles": ["anonymous"]
     },
     {
@@ -39,12 +45,15 @@
       "rewrite": "/index.html"
     }
   },
+  "platform": {
+    "apiRuntime": "node:18"
+  },
   "mimeTypes": {
     ".json": "application/json"
   },
   "globalHeaders": {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization"
+    "Access-Control-Allow-Headers": "Content-Type, X-Requested-With, Authorization"
   }
 }
