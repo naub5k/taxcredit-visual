@@ -1,6 +1,6 @@
 ---
 
-## title: InsuCompany API 연결 오류 구조 검토 요청서  
+## title: InsuSample API 연결 오류 구조 검토 요청서  
 date: 2025-05-16  
 requester: 유비님  
 recipient: Cursor Agent  
@@ -8,7 +8,7 @@ category: 구조검토
 
 ## 📌 요청 개요
 
-현재 `taxcredit_mobileapp` 프로젝트 내 `/api-test` 테스트 페이지에서 Data API Builder(DAB)를 통해 호출하는 `InsuCompany` API가 400 오류를 반환하고 있습니다.
+현재 `taxcredit_mobileapp` 프로젝트 내 `/api-test` 테스트 페이지에서 Data API Builder(DAB)를 통해 호출하는 `InsuSample` API가 400 오류를 반환하고 있습니다.
 
 그러나 동일한 Azure Function App 내의 `getSampleList` 함수는 **정상적으로 작동 중이며**, 실제 앱에서도 성공적으로 사용되고 있습니다.
 
@@ -26,7 +26,7 @@ category: 구조검토
 
 ## 🔍 오류 현상 요약
 
-- 호출 경로: `/data-api/rest/InsuCompany?$filter=시도 eq '서울특별시'`
+- 호출 경로: `/data-api/rest/InsuSample?$filter=시도 eq '서울특별시'`
     
 - HTTP 상태코드: **400 Bad Request**
     
@@ -34,7 +34,7 @@ category: 구조검토
     
 - 예상 원인:
     
-    - DAB 설정에서 `InsuCompany` 엔티티 내 `시도` 컬럼이 누락
+    - DAB 설정에서 `InsuSample` 엔티티 내 `시도` 컬럼이 누락
         
     - 또는 연결된 SQL 뷰/테이블에 실제 컬럼이 존재하지 않음
         
@@ -45,7 +45,7 @@ category: 구조검토
 
 ## 🛠️ 요청 항목
 
-1. `staticwebapp.database.config.json` 내 `InsuCompany` 엔티티 확인
+1. `staticwebapp.database.config.json` 내 `InsuSample` 엔티티 확인
     
     - `columns` 또는 `mappings` 내부에 `시도` 컬럼이 정의되어 있는지 점검
         
@@ -53,7 +53,7 @@ category: 구조검토
     
 3. 필요 시 컬럼 매핑 수정 또는 필터 컬럼명을 영어로 대체할 수 있는지 판단
     
-4. `/data-api/rest/InsuCompany`에 `$filter=시도 eq '서울특별시'` 호출이 **정상적으로 200 응답 반환**되도록 구조 수정
+4. `/data-api/rest/InsuSample`에 `$filter=시도 eq '서울특별시'` 호출이 **정상적으로 200 응답 반환**되도록 구조 수정
     
 
 ---

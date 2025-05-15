@@ -29,7 +29,7 @@ Azure Static Web Apps의 데이터베이스 연결 기능을 활용하여 기존
 `staticwebapp.database.config.json` 파일을 통해 다음 기능을 구성했습니다:
 
 - **SQL 데이터베이스 연결**: Azure SQL 데이터베이스에 직접 연결
-- **엔티티 모델링**: `Insu_sample` 테이블을 `Sample` 및 `InsuCompany` 엔티티로 매핑
+- **엔티티 모델링**: `Insu_sample` 테이블을 `Sample` 및 `InsuSample` 엔티티로 매핑
 - **API 엔드포인트**: REST 및 GraphQL 엔드포인트 활성화
 - **보안 설정**: 익명 액세스 허용 (기존 API와 동일한 수준)
 

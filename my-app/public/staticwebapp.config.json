@@ -28,7 +28,7 @@
       "priority": 150
     },
     {
-      "route": "/data-api/rest/InsuCompany*",
+      "route": "/data-api/rest/InsuSample*",
       "methods": ["GET", "OPTIONS"],
       "headers": {
         "Content-Type": "application/json",

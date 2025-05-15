@@ -8,7 +8,7 @@
       "priority": 100
     },
     {
-      "route": "/data-api/rest/InsuCompany*",
+      "route": "/data-api/rest/InsuSample*",
       "allowedRoles": ["anonymous"],
       "methods": ["GET", "OPTIONS"],
       "headers": {

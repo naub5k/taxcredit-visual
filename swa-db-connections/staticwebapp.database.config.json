@@ -29,7 +29,7 @@
     }
   },
   "entities": {
-    "InsuCompany": {
+    "InsuSample": {
       "source": {
         "type": "table",
         "object": "dbo.Insu_sample",

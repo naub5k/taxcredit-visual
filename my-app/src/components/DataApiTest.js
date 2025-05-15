@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
  * Static Web Apps 데이터베이스 연결(data-api)과 기존 API 함수를 비교 테스트합니다.
  */
 function DataApiTest() {
-  // API 선택 상태 (0: InsuCompany, 1: Sample, 2: 기존 함수, 3: 직접 API 테스트)
+  // API 선택 상태 (0: InsuSample, 1: Sample, 2: 기존 함수, 3: 직접 API 테스트)
   const [apiMode, setApiMode] = useState(0);
   // 데이터 및 UI 상태
   const [data, setData] = useState([]);
@@ -29,7 +29,7 @@ function DataApiTest() {
 
   // 초기 로드 시 직접 URL 설정
   useEffect(() => {
-    setDirectUrl(`${getBaseUrl()}/data-api/rest/InsuCompany`);
+    setDirectUrl(`${getBaseUrl()}/data-api/rest/InsuSample`);
   }, []);
 
   // 데이터 가져오기 함수
@@ -43,28 +43,28 @@ function DataApiTest() {
     // API 엔드포인트 설정
     let endpoint;
     if (apiMode === 0) {
-      // InsuCompany API - 다양한 필터 테스트
+      // InsuSample API - 다양한 필터 테스트
       
-            // 테스트 1: 영어 필드명 + 한글 값 (올바른 방식)      const filterExpr = `sido eq '${filterValue}'`;      const encodedFilter = encodeURIComponent(filterExpr);      endpoint = `${getBaseUrl()}/data-api/rest/InsuCompany?$filter=${encodedFilter}`;
+            // 테스트 1: 영어 필드명 + 한글 값 (올바른 방식)      const filterExpr = `sido eq '${filterValue}'`;      const encodedFilter = encodeURIComponent(filterExpr);      endpoint = `${getBaseUrl()}/data-api/rest/InsuSample?$filter=${encodedFilter}`;
       
       // 다음 시도는 주석처리
       /*
       // 테스트 2: 영어 필드명 + 한글 값 (기존 방식)
       const filterExpr = `sido eq '${filterValue.replace(/'/g, "''")}'`;
       const encodedFilter = encodeURIComponent(filterExpr);
-      endpoint = `${getBaseUrl()}/data-api/rest/InsuCompany?$filter=${encodedFilter}`;
+      endpoint = `${getBaseUrl()}/data-api/rest/InsuSample?$filter=${encodedFilter}`;
       */
       
       /*
       // 테스트 3: 한글 필드명 직접 시도
       const filterExpr = `시도 eq '${filterValue.replace(/'/g, "''")}'`;
       const encodedFilter = encodeURIComponent(filterExpr);
-      endpoint = `${getBaseUrl()}/data-api/rest/InsuCompany?$filter=${encodedFilter}`;
+      endpoint = `${getBaseUrl()}/data-api/rest/InsuSample?$filter=${encodedFilter}`;
       */
       
       /*
       // 테스트 4: 필터 없이 전체 데이터 요청
-      endpoint = `${getBaseUrl()}/data-api/rest/InsuCompany`;
+      endpoint = `${getBaseUrl()}/data-api/rest/InsuSample`;
       */
       
     } else if (apiMode === 1) {
@@ -82,7 +82,7 @@ function DataApiTest() {
     } else {
       // 직접 URL을 OData 형식으로 자동 변환 지원
       let userUrl = directUrl;
-      if (directUrl.includes('/InsuCompany') && !directUrl.includes('$filter=') && filterValue) {
+      if (directUrl.includes('/InsuSample') && !directUrl.includes('$filter=') && filterValue) {
         // 사용자가 직접 URL을 입력했지만 필터가 없는 경우 자동으로 추가
         const separator = directUrl.includes('?') ? '&' : '?';
         
@@ -221,7 +221,7 @@ function DataApiTest() {
   // 현재 API 모드명 반환
   const getApiModeName = () => {
     switch(apiMode) {
-      case 0: return 'Data API (InsuCompany)';
+      case 0: return 'Data API (InsuSample)';
       case 1: return 'Data API (Sample)';
       case 2: return 'Function API';
       case 3: return '직접 URL 테스트';
@@ -233,7 +233,7 @@ function DataApiTest() {
   const getApiEndpoint = () => {
     const base = getBaseUrl();
     switch(apiMode) {
-      case 0: return `${base}/data-api/rest/InsuCompany?$filter=sido eq '${filterValue}'`;  // 한글 값 그대로 사용
+      case 0: return `${base}/data-api/rest/InsuSample?$filter=sido eq '${filterValue}'`;  // 한글 값 그대로 사용
       case 1: return `${base}/data-api/rest/Sample?$top=5`;  // 필터 없이 테스트
       case 2: return `${base}/api/getSampleList?sido=${filterValue}&gugun=강남구`;  // 웹앱 호환 모드
       case 3: return directUrl;

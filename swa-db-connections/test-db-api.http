@@ -5,8 +5,8 @@
 @baseUrl = https://polite-desert-03a31df00.azurestaticapps.net
 @dataApiPath = /data-api/rest
 
-### 1. InsuCompany 엔티티 조회 (필터링: 서울특별시)
-GET {{baseUrl}}{{dataApiPath}}/InsuCompany?$filter=시도 eq '서울특별시'
+### 1. InsuSample 엔티티 조회 (필터링: 서울특별시)
+GET {{baseUrl}}{{dataApiPath}}/InsuSample?$filter=시도 eq '서울특별시'
 Accept: application/json
 Content-Type: application/json
 

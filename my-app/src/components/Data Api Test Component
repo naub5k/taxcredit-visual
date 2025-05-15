@@ -14,7 +14,7 @@ function DataApiTest() {
     setError('');
     setData([]);
     const endpoint = useDataApi
-      ? '/data-api/rest/InsuCompany'
+      ? '/data-api/rest/InsuSample'
       : '/api/getSampleList?sido=서울특별시&gugun=강남구';
 
     const start = Date.now();
