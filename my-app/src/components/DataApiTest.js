@@ -236,8 +236,8 @@ function DataApiTest() {
   const getApiEndpoint = () => {
     const base = getBaseUrl();
     switch(apiMode) {
-      case 0: return `${base}/data-api/rest/InsuCompany?$filter=sido eq '${filterValue}'`;  // 단순 필터
-      case 1: return `${base}/data-api/rest/Sample?$filter=sido eq '${filterValue}'&$top=5`;  // 단순 필터
+      case 0: return `${base}/data-api/rest/InsuCompany?$filter=sido eq '${filterValue === '서울특별시' ? 'Seoul' : filterValue}'`;  // 영어값 테스트
+      case 1: return `${base}/data-api/rest/Sample?$top=5`;  // 필터 없이 테스트
       case 2: return `${base}/api/getSampleList?sido=${filterValue}&gugun=강남구`;  // 웹앱 호환 모드
       case 3: return directUrl;
       default: return '';
@@ -388,6 +388,20 @@ function DataApiTest() {
         </div>
       </div>
 
+      {/* 매핑 정보 */}
+      <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded">
+        <h4 className="text-blue-700 font-medium">ℹ️ DAB 매핑 정보</h4>
+        <p className="text-sm text-blue-600 mt-1">
+          DAB 매핑 구조에 따르면:
+        </p>
+        <ul className="list-disc list-inside text-xs mt-1 text-blue-600 space-y-1">
+          <li><code>sido</code> ➡️ 실제 DB 컬럼: <code>시도</code></li>
+          <li><code>gugun</code> ➡️ 실제 DB 컬럼: <code>구군</code></li>
+          <li>한글 필드명이나 특수문자 포함 컬럼은 영문 매핑을 통해 접근해야 합니다</li>
+          <li>대체 영어값(Seoul) 테스트 중: 해당 시/도 값이 존재하는지 확인하세요</li>
+        </ul>
+      </div>
+
       {/* 환경 문제 알림 */}
       <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded">
         <h4 className="text-red-700 font-medium">⚠️ Azure 환경 설정 확인 필요</h4>
@@ -400,6 +414,14 @@ function DataApiTest() {
           <li><strong>정적 웹앱 라우팅</strong>: API 경로가 올바르게 구성되어 있는지 확인</li>
           <li><strong>직접 DB 연결 테스트</strong>: Azure Portal에서 직접 쿼리 테스트 실행</li>
         </ol>
+        
+        <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
+          <h5 className="text-yellow-800 text-xs font-medium">🔍 DB 쿼리 참고</h5>
+          <div className="mt-1 font-mono text-xs text-yellow-700 p-1 bg-yellow-100 rounded">
+            SELECT TOP 10 * FROM dbo.Insu_sample<br/>
+            SELECT * FROM dbo.Insu_sample WHERE 시도 = '서울특별시'
+          </div>
+        </div>
       </div>
     </div>
   );
