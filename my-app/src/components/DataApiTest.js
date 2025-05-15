@@ -45,11 +45,7 @@ function DataApiTest() {
     if (apiMode === 0) {
       // InsuCompany API - 다양한 필터 테스트
       
-      // 테스트 1: 영어 필드명 + 영어 값 (테스트용)
-      const testEnglishValue = filterValue === '서울특별시' ? 'Seoul' : filterValue;
-      const filterExpr = `sido eq '${testEnglishValue}'`;
-      const encodedFilter = encodeURIComponent(filterExpr);
-      endpoint = `${getBaseUrl()}/data-api/rest/InsuCompany?$filter=${encodedFilter}`;
+            // 테스트 1: 영어 필드명 + 한글 값 (올바른 방식)      const filterExpr = `sido eq '${filterValue}'`;      const encodedFilter = encodeURIComponent(filterExpr);      endpoint = `${getBaseUrl()}/data-api/rest/InsuCompany?$filter=${encodedFilter}`;
       
       // 다음 시도는 주석처리
       /*
@@ -90,9 +86,8 @@ function DataApiTest() {
         // 사용자가 직접 URL을 입력했지만 필터가 없는 경우 자동으로 추가
         const separator = directUrl.includes('?') ? '&' : '?';
         
-        // 영어 값으로 테스트
-        const testEnglishValue = filterValue === '서울특별시' ? 'Seoul' : filterValue;
-        const filterExpr = `sido eq '${testEnglishValue}'`;
+        // 한글 값 그대로 사용
+        const filterExpr = `sido eq '${filterValue}'`;
         const encodedFilter = encodeURIComponent(filterExpr);
         userUrl = `${directUrl}${separator}$filter=${encodedFilter}`;
       }
@@ -104,18 +99,12 @@ function DataApiTest() {
       url: endpoint,
       timestamp: new Date().toISOString(),
       apiMode: getApiModeName(),
-      explanation: apiMode === 2 ? 
-        "웹앱에서 정상 작동하는 Function API 동일 방식 호출" : 
-        "영어 필드값으로 테스트 중 (한글→영어 변환)"
+            explanation: apiMode === 2 ?         "웹앱에서 정상 작동하는 Function API 동일 방식 호출" :         "한글 필드값을 그대로 사용하여 API 호출"
     };
     setRequestInfo(reqInfo);
     
     console.log(`API 요청: ${endpoint}`);
-    if (apiMode === 2) {
-      console.log(`웹앱 호환 모드로 Function API 호출 중...`);
-    } else if (apiMode <= 1) {
-      console.log(`[테스트 모드] 한글→영어 값으로 변환하여 시도`);
-    }
+        if (apiMode === 2) {      console.log(`웹앱 호환 모드로 Function API 호출 중...`);    } else if (apiMode <= 1) {      console.log(`[테스트 모드] 한글 값을 그대로 사용하여 API 호출`);    }
     const start = Date.now();
 
     try {
@@ -236,7 +225,7 @@ function DataApiTest() {
   const getApiEndpoint = () => {
     const base = getBaseUrl();
     switch(apiMode) {
-      case 0: return `${base}/data-api/rest/InsuCompany?$filter=sido eq '${filterValue === '서울특별시' ? 'Seoul' : filterValue}'`;  // 영어값 테스트
+      case 0: return `${base}/data-api/rest/InsuCompany?$filter=sido eq '${filterValue}'`;  // 한글 값 그대로 사용
       case 1: return `${base}/data-api/rest/Sample?$top=5`;  // 필터 없이 테스트
       case 2: return `${base}/api/getSampleList?sido=${filterValue}&gugun=강남구`;  // 웹앱 호환 모드
       case 3: return directUrl;
