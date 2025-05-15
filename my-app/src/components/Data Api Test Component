@@ -1,0 +1,64 @@
+import React, { useState } from 'react';
+
+function DataApiTest() {
+  const [useDataApi, setUseDataApi] = useState(true);
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [timeTaken, setTimeTaken] = useState(null);
+
+  const toggleApi = () => setUseDataApi(prev => !prev);
+
+  const fetchData = async () => {
+    setLoading(true);
+    setError('');
+    setData([]);
+    const endpoint = useDataApi
+      ? '/data-api/rest/InsuCompany'
+      : '/api/getSampleList?sido=서울특별시&gugun=강남구';
+
+    const start = Date.now();
+
+    try {
+      const response = await fetch(endpoint);
+      if (!response.ok) throw new Error(`응답 오류: ${response.status}`);
+      const result = await response.json();
+      setData(result);
+      setTimeTaken(Date.now() - start);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="p-4 space-y-4">
+      <h2 className="text-lg font-bold">🔍 Data API 테스트</h2>
+      <div className="space-x-2">
+        <button onClick={toggleApi} className="bg-blue-500 text-white px-4 py-2 rounded">
+          API 전환 (현재: {useDataApi ? 'data-api' : 'Function'})
+        </button>
+        <button onClick={fetchData} className="bg-green-600 text-white px-4 py-2 rounded">
+          데이터 가져오기
+        </button>
+      </div>
+
+      {loading && <p>⏳ 로딩 중...</p>}
+      {timeTaken && <p>⏱ 응답 시간: {timeTaken}ms</p>}
+      {error && <p className="text-red-600">❌ 오류: {error}</p>}
+
+      {data && Array.isArray(data) && data.length > 0 && (
+        <ul className="list-disc pl-6">
+          {data.slice(0, 5).map((item, idx) => (
+            <li key={idx} className="text-sm">
+              {item.사업장명} ({item.시도} {item.구군})
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+export default DataApiTest;
