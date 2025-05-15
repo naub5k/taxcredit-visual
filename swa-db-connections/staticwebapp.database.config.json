@@ -29,20 +29,30 @@
     }
   },
   "entities": {
-    "Sample": {
-      "source": "dbo.Insu_sample",
-      "permissions": [
-        {
-          "actions": ["create", "read", "update", "delete"],
-          "role": "anonymous"
-        }
-      ]
-    },
     "InsuCompany": {
       "source": "dbo.Insu_sample",
       "permissions": [
         {
-          "actions": ["create", "read", "update", "delete"],
+          "actions": ["read"],
+          "role": "anonymous"
+        }
+      ],
+      "mappings": {
+        "사업장명": "사업장명",
+        "시도": "시도",
+        "구군": "구군",
+        "2020": "2020",
+        "2021": "2021",
+        "2022": "2022",
+        "2023": "2023",
+        "2024": "2024"
+      }
+    },
+    "Sample": {
+      "source": "dbo.Insu_sample",
+      "permissions": [
+        {
+          "actions": ["read"],
           "role": "anonymous"
         }
       ]

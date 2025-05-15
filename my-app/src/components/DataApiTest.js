@@ -40,11 +40,14 @@ function DataApiTest() {
     // API 엔드포인트 설정
     let endpoint;
     if (apiMode === 0) {
-      endpoint = `${getBaseUrl()}/data-api/rest/InsuCompany`; // InsuCompany 엔티티 사용
+      // InsuCompany 엔티티 + 필터링 추가
+      endpoint = `${getBaseUrl()}/data-api/rest/InsuCompany?$filter=시도 eq '서울특별시'`;
     } else if (apiMode === 1) {
-      endpoint = `${getBaseUrl()}/data-api/rest/Sample`; // Sample 엔티티 사용
+      // Sample 엔티티 + 탑 5개만 조회
+      endpoint = `${getBaseUrl()}/data-api/rest/Sample?$top=5`;
     } else if (apiMode === 2) {
-      endpoint = `${getBaseUrl()}/api/getSampleList?sido=서울특별시&gugun=강남구`; // 기존 Function API
+      // 기존 Function API
+      endpoint = `${getBaseUrl()}/api/getSampleList?sido=서울특별시&gugun=강남구`;
     } else {
       endpoint = directUrl; // 사용자가 입력한 직접 URL 사용
     }
@@ -97,8 +100,8 @@ function DataApiTest() {
   // 현재 API 엔드포인트 경로 반환
   const getApiEndpoint = () => {
     switch(apiMode) {
-      case 0: return '/data-api/rest/InsuCompany';
-      case 1: return '/data-api/rest/Sample';
+      case 0: return '/data-api/rest/InsuCompany?$filter=시도 eq \'서울특별시\'';
+      case 1: return '/data-api/rest/Sample?$top=5';
       case 2: return '/api/getSampleList?sido=서울특별시&gugun=강남구';
       case 3: return directUrl;
       default: return '';
@@ -207,9 +210,10 @@ function DataApiTest() {
         <div className="mt-2 p-2 bg-yellow-50 rounded-md border border-yellow-200">
           <h5 className="text-yellow-800 font-medium">⚠️ 문제 해결 팁</h5>
           <ul className="list-disc list-inside text-xs mt-1 text-yellow-700">
-            <li>400 오류: Azure Portal에서 데이터베이스 연결 설정 확인</li>
-            <li>HTML 응답: Function App이 올바르게 배포되었는지 확인</li>
-            <li>CORS 오류: Static Web App의 CORS 설정 확인</li>
+            <li><strong>400 오류</strong>: OData 구문 확인 - <code>$filter=컬럼명 eq '값'</code> 형식 사용</li>
+            <li><strong>데이터베이스 오류</strong>: Portal에서 연결 설정 및 테이블 권한 확인</li>
+            <li><strong>HTML 응답</strong>: Function App에 직접 접근 확인 (https://taxcredit-api-func-v2.azurewebsites.net/api/getSampleList)</li>
+            <li><strong>URL 인코딩</strong>: 특수문자를 URL 인코딩으로 처리 (<code>공백</code> → <code>%20</code>, <code>'</code> → <code>%27</code>)</li>
           </ul>
         </div>
       </div>
