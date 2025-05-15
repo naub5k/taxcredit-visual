@@ -27,6 +27,77 @@ function DataApiTest() {
     return window.location.origin;
   };
 
+  // 개발 환경인지 확인
+  const isDevelopment = () => {
+    return process.env.NODE_ENV === 'development';
+  };
+
+  // 모의 데이터 생성 (개발 환경에서만 사용)
+  const getMockData = (filter) => {
+    console.log('개발 환경에서 모의 데이터 사용 중...');
+    
+    // 기본 샘플 데이터
+    const sampleData = [
+      { 
+        사업장명: '삼성전자', 
+        시도: '서울특별시', 
+        구군: '강남구', 
+        '2020': 120, 
+        '2021': 150, 
+        '2022': 180, 
+        '2023': 200, 
+        '2024': 220 
+      },
+      { 
+        사업장명: 'LG전자', 
+        시도: '서울특별시', 
+        구군: '영등포구', 
+        '2020': 80, 
+        '2021': 90, 
+        '2022': 110, 
+        '2023': 130, 
+        '2024': 150 
+      },
+      { 
+        사업장명: '현대자동차', 
+        시도: '서울특별시', 
+        구군: '서초구', 
+        '2020': 200, 
+        '2021': 220, 
+        '2022': 240, 
+        '2023': 260, 
+        '2024': 280 
+      },
+      { 
+        사업장명: '카카오', 
+        시도: '경기도', 
+        구군: '성남시', 
+        '2020': 70, 
+        '2021': 100, 
+        '2022': 130, 
+        '2023': 160, 
+        '2024': 200 
+      },
+      { 
+        사업장명: '네이버', 
+        시도: '경기도', 
+        구군: '성남시', 
+        '2020': 150, 
+        '2021': 180, 
+        '2022': 210, 
+        '2023': 240, 
+        '2024': 270 
+      }
+    ];
+    
+    // 필터가 있으면 필터링
+    if (filter) {
+      return sampleData.filter(item => item.시도 === filter);
+    }
+    
+    return sampleData;
+  };
+
   // 초기 로드 시 직접 URL 설정
   useEffect(() => {
     setDirectUrl(`${getBaseUrl()}/data-api/rest/InsuSample`);
@@ -45,7 +116,10 @@ function DataApiTest() {
     if (apiMode === 0) {
       // InsuSample API - 다양한 필터 테스트
       
-            // 테스트 1: 영어 필드명 + 한글 값 (올바른 방식)      const filterExpr = `sido eq '${filterValue}'`;      const encodedFilter = encodeURIComponent(filterExpr);      endpoint = `${getBaseUrl()}/data-api/rest/InsuSample?$filter=${encodedFilter}`;
+      // 테스트 1: 영어 필드명 + 한글 값 (올바른 방식)
+      const filterExpr = `sido eq '${filterValue}'`;
+      const encodedFilter = encodeURIComponent(filterExpr);
+      endpoint = `${getBaseUrl()}/data-api/rest/InsuSample?$filter=${encodedFilter}`;
       
       // 다음 시도는 주석처리
       /*
@@ -108,6 +182,36 @@ function DataApiTest() {
     const start = Date.now();
 
     try {
+      // 개발 환경에서 모의 데이터 사용 (옵션)
+      if (isDevelopment() && apiMode < 2) {
+        console.log('개발 환경에서 모의 데이터 사용...');
+        
+        // 모의 응답 생성
+        const mockData = {
+          value: getMockData(filterValue)
+        };
+        
+        // 모의 데이터 기록 및 표시
+        setRawResponse(JSON.stringify(mockData, null, 2));
+        setData(mockData.value);
+        setTimeTaken(Date.now() - start);
+        
+        // 요청 정보 업데이트
+        setRequestInfo(prev => ({
+          ...prev,
+          status: 200,
+          statusText: 'OK (개발 모의 데이터)',
+          headers: {
+            'content-type': 'application/json',
+            'x-mock-data': 'true'
+          }
+        }));
+        
+        // 개발 환경에서 모의 데이터를 사용하는 경우 여기서 함수 종료
+        // 실제 API 호출을 하려면 아래 주석을 해제
+        // return;
+      }
+      
       const fetchOptions = {
         method: 'GET',
         headers: {
@@ -120,6 +224,7 @@ function DataApiTest() {
         credentials: 'omit'
       };
       
+      console.log(`API 요청 전송: ${endpoint}`);
       const response = await fetch(endpoint, fetchOptions);
       
       // 응답 헤더 기록
@@ -168,6 +273,34 @@ function DataApiTest() {
         console.warn('HTML 응답 감지: 예상된 JSON 응답 대신 HTML이 반환되었습니다.');
         console.log('응답 내용 확인:', responseText.substring(0, 200));
         
+        // 개발 환경에서는 모의 데이터로 진행 (옵션)
+        if (isDevelopment() && apiMode < 2) {
+          console.warn('개발 환경 감지: HTML 응답 대신 모의 데이터를 사용합니다.');
+          
+          // 모의 응답 생성
+          const mockData = {
+            value: getMockData(filterValue)
+          };
+          
+          // 모의 데이터 기록 및 표시
+          setRawResponse(JSON.stringify(mockData, null, 2) + "\n\n// 주의: 개발 환경에서 HTML 응답 대신 모의 데이터를 사용 중입니다.");
+          setData(mockData.value);
+          setTimeTaken(Date.now() - start);
+          
+          // 요청 정보에 HTML 응답 감지 정보 포함
+          setRequestInfo(prev => ({
+            ...prev,
+            mockData: true,
+            htmlResponseDetected: true,
+            originalResponse: "HTML_RESPONSE",
+            status: 200,
+            statusText: 'OK (개발 모의 데이터 - HTML 응답 대체)'
+          }));
+          
+          return; // 모의 데이터로 처리 완료
+        }
+        
+        // 프로덕션 환경에서는 오류 처리
         if (endpoint && endpoint.includes('/data-api/')) {
           console.error('DAB API가 HTML을 반환했습니다. 환경 변수와 데이터베이스 연결을 확인하세요.');
           throw new Error('데이터베이스 API가 HTML 응답을 반환했습니다. DATABASE_CONNECTION_STRING 환경 변수가 올바르게 설정되었는지 확인하세요.');
