@@ -1,17 +1,10 @@
 {
   "routes": [
     {
-      "route": "/api/getSampleList*",
+      "route": "/api/getSampleList",
       "allowedRoles": ["anonymous"],
       "serve": "https://taxcredit-api-func-v2.azurewebsites.net/api/getSampleList",
-      "methods": ["GET", "OPTIONS"],
-      "headers": {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
-        "Content-Type": "application/json; charset=utf-8",
-        "Cache-Control": "no-cache, no-store, must-revalidate"
-      }
+      "methods": ["GET", "OPTIONS"]
     },
     {
       "route": "/data-api/rest/InsuCompany*",

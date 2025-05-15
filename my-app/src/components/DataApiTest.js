@@ -72,8 +72,14 @@ function DataApiTest() {
       const encodedFilter = encodeURIComponent(filterExpr);
       endpoint = `${getBaseUrl()}/data-api/rest/Sample?$filter=${encodedFilter}&$top=5`;
     } else if (apiMode === 2) {
-      // 기존 Function API - 인코딩 적용 (gugun 매개변수 사용)
+      // 기존 Function API - 웹앱과 동일한 방식으로 호출
+      // 중요: 이 API는 웹앱에서 정상 작동하는 방식 그대로 호출
+      // URL을 정확히 확인하고 패턴을 분석해야 함
+      
+      // 매개변수 인코딩만 적용하고 URL 구조 유지
       endpoint = `${getBaseUrl()}/api/getSampleList?sido=${encodeURIComponent(filterValue)}&gugun=강남구`;
+      
+      console.log("[웹앱 호환 모드로 Function API 호출]", endpoint);
     } else {
       // 직접 URL을 OData 형식으로 자동 변환 지원
       let userUrl = directUrl;
@@ -94,12 +100,18 @@ function DataApiTest() {
       url: endpoint,
       timestamp: new Date().toISOString(),
       apiMode: getApiModeName(),
-      explanation: "Azure Portal에서 환경 변수 DATABASE_CONNECTION_STRING 확인 필요"
+      explanation: apiMode === 2 ? 
+        "웹앱에서 정상 작동하는 Function API 동일 방식 호출" : 
+        "Azure Portal에서 환경 변수 DATABASE_CONNECTION_STRING 확인 필요"
     };
     setRequestInfo(reqInfo);
     
     console.log(`API 요청: ${endpoint}`);
-    console.log(`계속 400 오류 발생 시 Azure Portal에서 Data API Builder 설정 및 DATABASE_CONNECTION_STRING 환경 변수 확인 필요`);
+    if (apiMode === 2) {
+      console.log(`웹앱 호환 모드로 Function API 호출 중...`);
+    } else {
+      console.log(`계속 400 오류 발생 시 Azure Portal에서 Data API Builder 설정 및 DATABASE_CONNECTION_STRING 환경 변수 확인 필요`);
+    }
     const start = Date.now();
 
     try {
@@ -222,7 +234,7 @@ function DataApiTest() {
     switch(apiMode) {
       case 0: return `${base}/data-api/rest/InsuCompany?$filter=sido eq '${filterValue}'`;  // 단순 필터
       case 1: return `${base}/data-api/rest/Sample?$filter=sido eq '${filterValue}'&$top=5`;  // 단순 필터
-      case 2: return `${base}/api/getSampleList?sido=${filterValue}&gugun=강남구`;
+      case 2: return `${base}/api/getSampleList?sido=${filterValue}&gugun=강남구`;  // 웹앱 호환 모드
       case 3: return directUrl;
       default: return '';
     }
