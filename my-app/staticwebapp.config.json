@@ -8,13 +8,6 @@
       "priority": 100
     },
     {
-      "route": "/data-api/*",
-      "allowedRoles": ["anonymous"],
-      "methods": ["GET", "POST", "OPTIONS"],
-      "rewrite": "/data-api-proxy",
-      "priority": 50
-    },
-    {
       "route": "/data-api/rest/InsuSample*",
       "allowedRoles": ["anonymous"],
       "methods": ["GET", "OPTIONS"],
@@ -25,7 +18,8 @@
         "Content-Type": "application/json; charset=utf-8",
         "Cache-Control": "no-cache, no-store, must-revalidate"
       },
-      "priority": 100
+      "rewrite": "/data-api-proxy",
+      "priority": 30
     },
     {
       "route": "/data-api/rest/Sample*",
@@ -38,7 +32,15 @@
         "Content-Type": "application/json; charset=utf-8",
         "Cache-Control": "no-cache, no-store, must-revalidate"
       },
-      "priority": 100
+      "rewrite": "/data-api-proxy",
+      "priority": 30
+    },
+    {
+      "route": "/data-api/*",
+      "allowedRoles": ["anonymous"],
+      "methods": ["GET", "POST", "OPTIONS"],
+      "rewrite": "/data-api-proxy",
+      "priority": 50
     },
     {
       "route": "/data-api/graphql*",
