@@ -1,36 +1,31 @@
 /**
  * React 개발 서버 프록시 설정
- * /data-api 경로가 제대로 처리되도록 함
+ * /api 경로의 요청을 Azure Functions로 전달합니다.
  */
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
 module.exports = function(app) {
-  // data-api 프록시 설정
+  // Azure Functions API 프록시 설정
   app.use(
-    '/data-api',
+    '/api',
     createProxyMiddleware({
-      // 이 부분은 개발 환경에 맞게 설정해야 합니다
-      // Azure Static Web Apps에서는 내부적으로 처리됨
-      target: 'http://localhost:7071',
+      target: 'https://taxcredit-api-func-v2.azurewebsites.net',
       changeOrigin: true,
-      pathRewrite: {
-        '^/data-api': '/api/data-api-proxy',  // Function API 엔드포인트로 리디렉션
-      },
       onProxyReq: (proxyReq, req, res) => {
-        console.log('프록시 요청:', req.method, req.path);
+        console.log('API 프록시 요청:', req.method, req.path);
       },
       onProxyRes: (proxyRes, req, res) => {
-        console.log('프록시 응답:', proxyRes.statusCode);
+        console.log('API 프록시 응답:', proxyRes.statusCode);
       },
       onError: (err, req, res) => {
-        console.error('프록시 오류:', err);
+        console.error('API 프록시 오류:', err);
         res.writeHead(500, {
           'Content-Type': 'application/json',
         });
         res.end(JSON.stringify({ 
-          error: '데이터 API 프록시 오류',
+          error: 'API 연결 오류',
           message: err.message,
-          details: '개발 환경에서는 Azure Functions 로컬 에뮬레이터가 필요합니다.'
+          details: '요청한 API에 접근할 수 없습니다.'
         }));
       }
     })
