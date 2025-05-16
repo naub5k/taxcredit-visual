@@ -14,7 +14,7 @@
 - **UI 스타일링**: TailwindCSS
 - **차트 라이브러리**: Recharts
 - **배포 환경**: Azure Static Web Apps
-- **배포 방식**: Git 직접 배포 (azure 리모트) 또는 정적 파일 배포
+- **배포 방식**: GitHub 작업 실행 (GitHub Actions)
 - **데이터 액세스**: Azure Static Web Apps 데이터베이스 연결
 - **중요 환경 변수**: `WEBSITE_RUN_FROM_PACKAGE` 설정 필요
 
@@ -47,7 +47,7 @@ taxcredit_mobileapp/                # 프로젝트 최상위 디렉토리
 │   ├── staticwebapp.config.json    # Azure Static Web Apps 설정
 │   └── tailwind.config.js          # TailwindCSS 설정
 │
-├── api-func/                       # Azure Functions API (기존)
+├── api-func/                       # Azure Functions API
 │   ├── getSampleList/              # 샘플 데이터 조회 함수
 │   ├── utils/                      # API 유틸리티 함수
 │   └── src/                        # 소스 코드
@@ -92,7 +92,14 @@ taxcredit_mobileapp/                # 프로젝트 최상위 디렉토리
    ```
    애플리케이션이 http://localhost:3000 에서 실행됩니다.
 
-## 데이터베이스 연결 설정
+## 로컬 개발 및 API 테스트
+
+### 개발/배포 환경 분기 구조
+
+- **개발 환경(localhost)**: 로컬 API(`http://localhost:7071`)를 호출
+- **배포 환경**: Azure API(`https://taxcredit-api-func-v2.azurewebsites.net`)를 호출
+
+### 데이터베이스 연결 설정
 
 이 프로젝트는 Azure Static Web Apps의 데이터베이스 연결 기능을 활용하여 백엔드 코드 없이 데이터베이스 직접 액세스를 지원합니다.
 
@@ -148,48 +155,48 @@ function App() {
 
 ## 배포 방법
 
-이 프로젝트는 두 가지 배포 방식을 지원합니다:
+이 프로젝트는 GitHub Actions를 통해 Azure Static Web Apps에 자동 배포됩니다:
 
-### 1. Git 기반 소스 배포
+### GitHub Actions 자동 배포
 
-Git을 통한 직접 배포 방식:
-
-1. Azure Git 원격 저장소 설정 (최초 1회):
-   ```bash
-   git remote add azure https://사용자명@taxcredit-visual.scm.azurewebsites.net/taxcredit-visual.git
-   ```
-
-2. 변경사항 커밋 및 푸시:
+1. `master` 브랜치에 코드를 푸시하면 GitHub Actions가 자동으로 트리거됩니다:
    ```bash
    git add .
-   git commit -m "배포: 변경 내용 설명"
-   git push azure master
+   git commit -m "변경 내용 설명"
+   git push origin master
    ```
 
-### 2. 정적 빌드 파일 배포 (권장)
+2. GitHub Actions 워크플로우가 자동으로 실행되어 다음 작업을 수행합니다:
+   - 의존성 설치 (`npm install`)
+   - 앱 빌드 (`npm run build`)
+   - Azure Static Web Apps에 배포
 
-**권장 방식**: 로컬에서 빌드하고 빌드 결과물만 배포:
+### 수동 배포 (선택적)
+
+정적 빌드 파일 배포가 필요한 경우:
 
 1. 정적 파일 배포 스크립트 실행:
    ```bash
    cd taxcredit_mobileapp
    ./scripts/deploy-static.ps1
    ```
-   이 명령은 다음 작업을 자동으로 수행합니다:
-   - 로컬에서 `npm run build` 실행
-   - build 폴더의 내용을 zip으로 압축
-   - Azure에 직접 정적 파일 배포 (빌드 과정 없이)
-
-2. 배포 시간이 몇 초로 단축됩니다.
-   - 장점: 빠른 배포, 빌드 실패 위험 없음
-   - 참고: 처음 실행시 Azure 배포 자격 증명을 입력해야 합니다.
+   이 명령은 로컬에서 빌드하고 결과물을 Azure에 직접 배포합니다.
 
 배포된 애플리케이션은 다음 URL에서 접근 가능합니다:
-- https://taxcredit-visual.azurewebsites.net
+- https://polite-desert-03a31df00.6.azurestaticapps.net
 
 ### SPA 라우팅
 
 이 앱은 Single Page Application으로, `staticwebapp.config.json` 파일을 통해 Azure에서 라우팅을 설정합니다. 이 파일은 모든 라우트를 `index.html`로 리디렉션합니다.
+
+## 프로젝트 리소스 정보
+
+### Azure 리소스
+- **리소스 그룹**: taxcredit-rg
+- **지역**: Korea Central
+- **API 함수 앱**: taxcredit-api-func-v2.azurewebsites.net
+- **정적 웹앱**: https://polite-desert-03a31df00.6.azurestaticapps.net
+- **배포 방식**: GitHub Actions (azure-static-web-apps-polite-desert-03a31df00.yml)
 
 ## 프로젝트 유지 관리
 
