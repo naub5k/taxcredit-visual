@@ -43,7 +43,7 @@ module.exports = async function (context, req) {
       query += ` AND 시도 = @sido`;
       params.push({
         name: 'sido',
-        type: sql.NVarChar,
+        type: 'nvarchar',
         value: sido
       });
     } else {
@@ -54,7 +54,7 @@ module.exports = async function (context, req) {
       query += ` AND 구군 = @gugun`;
       params.push({
         name: 'gugun',
-        type: sql.NVarChar,
+        type: 'nvarchar',
         value: gugun
       });
     }

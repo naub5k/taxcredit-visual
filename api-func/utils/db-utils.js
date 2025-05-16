@@ -37,8 +37,29 @@ module.exports = async function executeQuery(query, params = [], context) {
       
       // 매개변수 추가 - 타입 검증 및 재설정 로직 추가
       params.forEach(param => {
+        // 문자열로 전달된 타입을 처리
+        if (typeof param.type === 'string') {
+          // 문자열 타입을 실제 SQL 타입으로 변환
+          let sqlType;
+          switch(param.type.toLowerCase()) {
+            case 'nvarchar':
+              sqlType = sql.NVarChar;
+              break;
+            case 'varchar':
+              sqlType = sql.VarChar;
+              break;
+            case 'int':
+              sqlType = sql.Int;
+              break;
+            default:
+              sqlType = sql.NVarChar; // 기본값
+          }
+          
+          if (context) context.log(`파라미터 '${param.name}'의 타입 '${param.type}'을 SQL 타입으로 변환하여 사용합니다.`);
+          request.input(param.name, sqlType, param.value);
+        }
         // 타입이 유효하지 않은 경우(parameter.type.validate is not a function 오류 방지)
-        if (!param.type || typeof param.type.validate !== 'function') {
+        else if (!param.type || typeof param.type.validate !== 'function') {
           if (context) context.log.warn(`파라미터 '${param.name}'의 타입이 유효하지 않아 NVarChar로 재설정합니다.`);
           console.warn(`파라미터 '${param.name}'의 타입이 유효하지 않아 NVarChar로 재설정합니다.`);
           
