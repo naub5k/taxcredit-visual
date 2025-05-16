@@ -82,6 +82,7 @@ module.exports = async function (context, req) {
   } catch (err) {
     // 오류 로깅 강화
     context.log.error('getSampleList 오류 발생:');
+    console.error("콘솔 오류 (index.js):", err.message, err.stack);
     context.log.error(`요청 파라미터 - sido: ${req.query.sido || 'null'}, gugun: ${req.query.gugun || 'null'}`);
     context.log.error(`오류 유형: ${err.name}`);
     context.log.error(`오류 메시지: ${err.message}`);

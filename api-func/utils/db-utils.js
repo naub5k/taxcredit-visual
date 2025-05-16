@@ -60,15 +60,20 @@ module.exports = async function executeQuery(query, params = [], context) {
         console.error(`Database error (attempt ${retryCount + 1}/${maxRetries + 1}):`, err.message, err.stack);
       }
       
+      // 콘솔 로깅 추가 - context 존재 여부와 관계없이 항상 출력
+      console.error("콘솔 오류 (db-utils.js):", err.name, err.message, err.stack);
+      
       try {
         await sql.close();
       } catch (closeErr) {
         if (context) context.log.error('연결 종료 중 추가 오류:', closeErr.message);
+        console.error("연결 종료 중 추가 오류 (콘솔):", closeErr.message, closeErr.stack);
       }
       
       // 마지막 시도이면 오류 발생
       if (retryCount >= maxRetries) {
         if (context) context.log.error(`최대 재시도 횟수(${maxRetries})를 초과했습니다. 쿼리 실패.`);
+        console.error(`최대 재시도 횟수(${maxRetries})를 초과했습니다. 쿼리 실패.`);
         throw err;
       }
       
