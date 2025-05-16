@@ -35,9 +35,19 @@ module.exports = async function executeQuery(query, params = [], context) {
       
       const request = pool.request();
       
-      // 매개변수 추가
+      // 매개변수 추가 - 타입 검증 및 재설정 로직 추가
       params.forEach(param => {
-        request.input(param.name, param.type, param.value);
+        // 타입이 유효하지 않은 경우(parameter.type.validate is not a function 오류 방지)
+        if (!param.type || typeof param.type.validate !== 'function') {
+          if (context) context.log.warn(`파라미터 '${param.name}'의 타입이 유효하지 않아 NVarChar로 재설정합니다.`);
+          console.warn(`파라미터 '${param.name}'의 타입이 유효하지 않아 NVarChar로 재설정합니다.`);
+          
+          // sql 모듈에서 직접 NVarChar 타입 사용
+          request.input(param.name, sql.NVarChar, param.value);
+        } else {
+          // 기존 타입이 유효한 경우 그대로 사용
+          request.input(param.name, param.type, param.value);
+        }
       });
       
       const result = await request.query(query);
