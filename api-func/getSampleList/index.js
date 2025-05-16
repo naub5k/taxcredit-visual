@@ -2,7 +2,14 @@
 const executeQuery = require('../utils/db-utils');
 const sql = require('mssql');
 
+// 함수 모듈이 실제로 로드되는지 확인하기 위한 로그
+console.log("===== getSampleList 함수 모듈 로드됨 =====");
+
 module.exports = async function (context, req) {
+  // 함수 진입 확인을 위한 강제 로그
+  console.log("===== getSampleList 함수 진입 성공 =====");
+  console.log(`요청 메서드: ${req.method}, URL: ${req.url}`);
+  
   const startTime = new Date();
   context.log('getSampleList 함수 시작:', startTime.toISOString());
   
@@ -18,6 +25,7 @@ module.exports = async function (context, req) {
   // OPTIONS 요청 처리 (CORS preflight)
   if (req.method === 'OPTIONS') {
     context.log('OPTIONS 요청 처리');
+    console.log('OPTIONS 요청 처리 - console.log');
     context.res = {
       status: 200,
       headers: corsHeaders,
@@ -34,6 +42,7 @@ module.exports = async function (context, req) {
     context.log(`요청 파라미터 - sido: ${sido}, gugun: ${gugun}`);
     // 작업요청서에 명시된 형식대로 파라미터 로깅 추가
     context.log('요청 파라미터', { sido, gugun });
+    console.log(`console.log - 요청 파라미터: sido=${sido}, gugun=${gugun}`);
     
     // 쿼리 구성 - 수정된 버전 (파라미터화)
     let query = `SELECT 사업장명, 시도, 구군, [2020], [2021], [2022], [2023], [2024] FROM Insu_sample WHERE 1=1`;
@@ -43,7 +52,7 @@ module.exports = async function (context, req) {
       query += ` AND 시도 = @sido`;
       params.push({
         name: 'sido',
-        type: 'nvarchar',
+        type: sql.NVarChar,
         value: sido
       });
     } else {
@@ -54,12 +63,13 @@ module.exports = async function (context, req) {
       query += ` AND 구군 = @gugun`;
       params.push({
         name: 'gugun',
-        type: 'nvarchar',
+        type: sql.NVarChar,
         value: gugun
       });
     }
     
     context.log('데이터베이스 쿼리:', query);
+    console.log('console.log - 데이터베이스 쿼리:', query);
     
     const queryStartTime = new Date();
     // 쿼리 실행 (파라미터화된 쿼리 사용) - context 객체 전달
@@ -69,6 +79,7 @@ module.exports = async function (context, req) {
     
     context.log(`쿼리 결과: ${result.recordset.length}개 레코드 조회됨`);
     context.log('DB 쿼리 시간(ms):', queryDuration);
+    console.log(`console.log - 쿼리 결과: ${result.recordset.length}개 레코드, 시간: ${queryDuration}ms`);
 
     // 성공 응답 - CORS 헤더 포함
     context.res = {
@@ -79,9 +90,11 @@ module.exports = async function (context, req) {
     
     const endTime = new Date();
     context.log(`getSampleList 함수 종료: 총 ${endTime - startTime}ms 소요`);
+    console.log(`console.log - 함수 종료, 총 ${endTime - startTime}ms 소요`);
   } catch (err) {
     // 오류 로깅 강화
     context.log.error('getSampleList 오류 발생:');
+    console.error("===== getSampleList 오류 발생 =====");
     console.error("콘솔 오류 (index.js):", err.message, err.stack);
     context.log.error(`요청 파라미터 - sido: ${req.query.sido || 'null'}, gugun: ${req.query.gugun || 'null'}`);
     context.log.error(`오류 유형: ${err.name}`);
@@ -105,5 +118,6 @@ module.exports = async function (context, req) {
     
     const endTime = new Date();
     context.log.error(`getSampleList 함수 오류 종료: 총 ${endTime - startTime}ms 소요`);
+    console.error(`console.error - 함수 오류 종료, 총 ${endTime - startTime}ms 소요`);
   }
 };
