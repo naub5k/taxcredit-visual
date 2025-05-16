@@ -3,7 +3,8 @@ const executeQuery = require('../utils/db-utils');
 const sql = require('mssql');
 
 module.exports = async function (context, req) {
-  context.log('getSampleList 함수가 실행되었습니다.', req.method);
+  const startTime = new Date();
+  context.log('getSampleList 함수 시작:', startTime.toISOString());
   
   // CORS 헤더 정의 (개선된 버전)
   const corsHeaders = {
@@ -30,7 +31,9 @@ module.exports = async function (context, req) {
     const sido = req.query.sido || null;
     const gugun = req.query.gugun || null;
     
-    context.log(`파라미터 수신: sido=${sido}, gugun=${gugun}`);
+    context.log(`요청 파라미터 - sido: ${sido}, gugun: ${gugun}`);
+    // 작업요청서에 명시된 형식대로 파라미터 로깅 추가
+    context.log('요청 파라미터', { sido, gugun });
     
     // 쿼리 구성 - 수정된 버전 (파라미터화)
     let query = `SELECT 사업장명, 시도, 구군, [2020], [2021], [2022], [2023], [2024] FROM Insu_sample WHERE 1=1`;
@@ -56,12 +59,16 @@ module.exports = async function (context, req) {
       });
     }
     
-    context.log('데이터베이스 쿼리 실행 중:', query);
+    context.log('데이터베이스 쿼리:', query);
     
-    // 쿼리 실행 (파라미터화된 쿼리 사용)
-    const result = await executeQuery(query, params);
+    const queryStartTime = new Date();
+    // 쿼리 실행 (파라미터화된 쿼리 사용) - context 객체 전달
+    const result = await executeQuery(query, params, context);
+    const queryEndTime = new Date();
+    const queryDuration = queryEndTime - queryStartTime;
     
     context.log(`쿼리 결과: ${result.recordset.length}개 레코드 조회됨`);
+    context.log('DB 쿼리 시간(ms):', queryDuration);
 
     // 성공 응답 - CORS 헤더 포함
     context.res = {
@@ -70,18 +77,32 @@ module.exports = async function (context, req) {
       body: result.recordset
     };
     
-    context.log('응답 전송 완료');
+    const endTime = new Date();
+    context.log(`getSampleList 함수 종료: 총 ${endTime - startTime}ms 소요`);
   } catch (err) {
-    // 오류 처리 - CORS 헤더 포함
-    context.log.error('getSampleList 함수 오류:', err);
+    // 오류 로깅 강화
+    context.log.error('getSampleList 오류 발생:');
+    context.log.error(`요청 파라미터 - sido: ${req.query.sido || 'null'}, gugun: ${req.query.gugun || 'null'}`);
+    context.log.error(`오류 유형: ${err.name}`);
+    context.log.error(`오류 메시지: ${err.message}`);
+    context.log.error(`오류 스택: ${err.stack}`);
+    
+    // 개선된 오류 응답 구조 - 요청서에 맞게 수정
     context.res = {
       status: 500,
       headers: corsHeaders,
       body: {
-        error: "데이터를 가져오는 중 오류가 발생했습니다.",
-        details: err.message,
+        message: "DB 연결 또는 실행 오류",
+        detail: err.message,
+        parameters: {
+          sido: req.query.sido || null,
+          gugun: req.query.gugun || null
+        },
         timestamp: new Date().toISOString()
       }
     };
+    
+    const endTime = new Date();
+    context.log.error(`getSampleList 함수 오류 종료: 총 ${endTime - startTime}ms 소요`);
   }
 };
