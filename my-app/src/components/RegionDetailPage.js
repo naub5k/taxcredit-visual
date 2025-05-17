@@ -36,6 +36,7 @@ function RegionDetailPage() {
       try {
         console.log(`API 호출 시작: sido=${sido}, gugun=${gugun}`);
         
+        // ⚠️ 중요: v2 API 호출 구성 - UI 작동에 결정적인 부분
         // API URL 결정 로직 - 환경에 따른 분기 처리
         const baseUrl = window.location.hostname.includes("localhost")
           ? "http://localhost:7071"
@@ -43,7 +44,8 @@ function RegionDetailPage() {
         
         console.log('API 기본 URL:', baseUrl);
         
-        // 전체 URL 구성
+        // ⚠️ 중요: 여기서 v2 함수 API(getSampleList)를 호출함
+        // 이 API 호출이 UI 데이터 표시에 직접적 영향을 미침
         const apiUrl = `${baseUrl}/api/getSampleList?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}`;
         console.log('최종 API URL:', apiUrl);
         

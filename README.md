@@ -8,6 +8,23 @@
 - 2025.05.15: Azure Static Web Apps 데이터베이스 연결 기능 추가
 - 2025.05.17: 프로젝트 전체 구조 정리 및 문서화 개선
 
+## ⚠️ API 호출 구조 안내
+
+### API 구조 개요
+
+이 프로젝트는 두 가지 독립적인 API 시스템을 포함하고 있습니다:
+
+1. **v2 함수 API 시스템** (✅ 실제 사용 중)
+   - 엔드포인트: `/api/getSampleList`
+   - 서버: `taxcredit-api-func-v2.azurewebsites.net`
+   - UI 컴포넌트에서 직접 호출
+
+2. **data-api 시스템** (⚠️ 구현되었으나 현재 사용되지 않음)
+   - 엔드포인트: `/data-api/rest/Sample`, `/data-api/graphql`
+   - 참조 구현: `src/utils/deprecated/dataApiService.js`
+
+상세 정보는 [my-app/docs/API_STRUCTURE.md](my-app/docs/API_STRUCTURE.md) 문서를 참조하세요.
+
 ## 프로젝트 기술 스택
 
 - **프론트엔드 프레임워크**: React 18
@@ -15,7 +32,7 @@
 - **차트 라이브러리**: Recharts
 - **배포 환경**: Azure Static Web Apps
 - **배포 방식**: GitHub 작업 실행 (GitHub Actions)
-- **데이터 액세스**: Azure Static Web Apps 데이터베이스 연결
+- **데이터 액세스**: Azure Function API (v2)
 - **중요 환경 변수**: `WEBSITE_RUN_FROM_PACKAGE` 설정 필요
 
 ## 프로젝트 구조
@@ -32,13 +49,22 @@ taxcredit_mobileapp/                # 프로젝트 최상위 디렉토리
 │   │   ├── components/             # React 컴포넌트
 │   │   │   ├── FunnelChart.jsx     # 깔때기형 차트 컴포넌트
 │   │   │   ├── RegionList.jsx      # 지역 목록 컴포넌트
-│   │   │   └── DataApiSample.js    # 데이터베이스 연결 샘플 컴포넌트
+│   │   │   ├── RegionDetailPage.js # 지역 상세 페이지 (v2 API 호출)
+│   │   │   └── DataApiTest.js      # API 테스트 컴포넌트 (v2 API 호출)
 │   │   ├── data/                   # 데이터 모델
 │   │   │   └── dummyRefinementData.js # 샘플 데이터
 │   │   ├── utils/                  # 유틸리티 함수
-│   │   │   └── dataApiService.js   # 데이터베이스 API 서비스
+│   │   │   ├── deprecated/         # 미사용 코드
+│   │   │   │   └── dataApiService.js  # (미사용) 데이터베이스 API 서비스
+│   │   │   └── aiService.js        # AI 모델 호출 서비스
 │   │   ├── App.js                  # 메인 앱 컴포넌트
 │   │   └── index.js                # 진입점
+│   ├── docs/                       # 문서 디렉토리
+│   │   ├── API_STRUCTURE.md        # API 구조 상세 문서
+│   │   └── STATICWEBAPP_CONFIG_GUIDE.md # 라우팅 설정 가이드
+│   ├── scripts/                    # 스크립트 디렉토리
+│   │   └── api-test.js             # API 테스트 스크립트
+│   ├── api-test-responses/         # API 테스트 결과 저장소
 │   ├── archives/                   # 완료된 작업 결과 보관
 │   ├── .cursor/                    # Cursor AI 설정 및 작업 파일
 │   ├── .gitignore                  # Git 무시 파일 목록
@@ -48,7 +74,7 @@ taxcredit_mobileapp/                # 프로젝트 최상위 디렉토리
 │   └── tailwind.config.js          # TailwindCSS 설정
 │
 ├── api-func/                       # Azure Functions API
-│   ├── getSampleList/              # 샘플 데이터 조회 함수
+│   ├── getSampleList/              # 샘플 데이터 조회 함수 (v2 API)
 │   ├── utils/                      # API 유틸리티 함수
 │   └── src/                        # 소스 코드
 │
@@ -94,64 +120,36 @@ taxcredit_mobileapp/                # 프로젝트 최상위 디렉토리
 
 ## 로컬 개발 및 API 테스트
 
+### API 테스트 방법
+
+1. **API 서버 실행**:
+   ```bash
+   cd taxcredit_mobileapp/api-func
+   func start
+   ```
+   로컬 API 서버가 http://localhost:7071 에서 실행됩니다.
+
+2. **API 테스트 스크립트 실행**:
+   ```bash
+   cd taxcredit_mobileapp/my-app
+   node scripts/api-test.js
+   ```
+   
+   특정 지역으로 테스트:
+   ```bash
+   node scripts/api-test.js 서울특별시 강남구
+   ```
+
 ### 개발/배포 환경 분기 구조
 
-- **개발 환경(localhost)**: 로컬 API(`http://localhost:7071`)를 호출
-- **배포 환경**: Azure API(`https://taxcredit-api-func-v2.azurewebsites.net`)를 호출
-
-### 데이터베이스 연결 설정
-
-이 프로젝트는 Azure Static Web Apps의 데이터베이스 연결 기능을 활용하여 백엔드 코드 없이 데이터베이스 직접 액세스를 지원합니다.
-
-### 로컬 개발 환경 설정
-
-1. Static Web Apps CLI 설치:
-   ```bash
-   npm install -g @azure/static-web-apps-cli
-   ```
-
-2. 연결 문자열 환경 변수 설정:
-   ```bash
-   # Windows
-   set DATABASE_CONNECTION_STRING=Server=naub5k.database.windows.net;Database=CleanDB;User Id=naub5k;Password=dunkin3106UB!;Encrypt=true
-
-   # Linux/Mac
-   export DATABASE_CONNECTION_STRING=Server=naub5k.database.windows.net;Database=CleanDB;User Id=naub5k;Password=dunkin3106UB!;Encrypt=true
-   ```
-
-3. 로컬 Static Web Apps 실행:
-   ```bash
-   swa start my-app/build --data-api-location swa-db-connections
-   ```
+- **개발 환경(localhost)**: 로컬 API(`http://localhost:7071/api/getSampleList`)를 호출
+- **배포 환경**: Azure API(`https://taxcredit-api-func-v2.azurewebsites.net/api/getSampleList`)를 호출
 
 ### 중요 구성 설정
 
 Azure Portal에서 다음 설정이 필요합니다:
 - **WEBSITE_RUN_FROM_PACKAGE**: 배포 시 1로 설정해야 함
 - 이 설정이 누락될 경우 함수 앱이 제대로 작동하지 않을 수 있음
-
-### 데이터 API 엔드포인트
-
-데이터베이스 연결 설정 후 다음 엔드포인트가 사용 가능합니다:
-
-- **REST API**: `/data-api/rest/Sample`
-- **GraphQL API**: `/data-api/graphql`
-
-### 샘플 컴포넌트
-
-`DataApiSample` 컴포넌트는 Azure Static Web Apps 데이터베이스 연결을 활용한 예제입니다:
-
-```jsx
-import { DataApiSample } from './components/DataApiSample';
-
-function App() {
-  return (
-    <div className="App">
-      <DataApiSample />
-    </div>
-  );
-}
-```
 
 ## 배포 방법
 

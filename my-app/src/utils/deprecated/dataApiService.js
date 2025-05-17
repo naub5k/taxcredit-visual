@@ -1,5 +1,11 @@
 /**
- * Static Web Apps 데이터베이스 연결을 위한 API 서비스
+ * [deprecated] Static Web Apps 데이터베이스 연결을 위한 API 서비스
+ * 
+ * ⚠️ 주의: 이 파일은 현재 프로젝트에서 사용되지 않습니다.
+ * 실제 앱은 v2 함수 API(/api/getSampleList)를 사용하고 있으며,
+ * 이 파일은 향후 참조용으로만 보관됩니다.
+ * 
+ * ℹ️ 참조: docs/API_STRUCTURE.md 문서에서 API 구조 확인 가능
  */
 
 // 개발 환경에서는 localhost:4280, 프로덕션 환경에서는 현재 호스트 사용
