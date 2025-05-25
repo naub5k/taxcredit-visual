@@ -128,7 +128,9 @@ function RegionDetailPage() {
       
       console.log('응답 구조:', Object.keys(responseData));
       console.log(`데이터 배열 길이: ${responseData.data?.length || 0}`);
-      console.log('집계값:', responseData.aggregates);
+      console.log('집계값 전체:', responseData.aggregates);
+      console.log('🔍 totalCount 값:', responseData.aggregates?.totalCount);
+      console.log('🔍 totalCount 타입:', typeof responseData.aggregates?.totalCount);
       console.log('페이지네이션:', responseData.pagination);
       console.log('메타 정보:', responseData.meta);
       
@@ -145,12 +147,18 @@ function RegionDetailPage() {
       
       // 안전한 상태 업데이트 (기본값 보장)
       setData(responseData.data || []);
-      setAggregates(responseData.aggregates || {
+      
+      // aggregates 상태 업데이트 전 로깅
+      const aggregatesData = responseData.aggregates || {
         maxEmployeeCount: 0,
         minEmployeeCount: 0,
         avgEmployeeCount: 0,
         totalCount: 0
-      });
+      };
+      console.log('🎯 설정할 aggregates 데이터:', aggregatesData);
+      console.log('🎯 totalCount 최종값:', aggregatesData.totalCount);
+      
+      setAggregates(aggregatesData);
               setPagination(responseData.pagination || {
           page: 1,
           pageSize: 20,
@@ -363,6 +371,7 @@ function RegionDetailPage() {
               <div>
                 <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
                   총 검색결과: <span className="text-blue-600 font-bold">{aggregates.totalCount || 0}</span>개
+                  <span className="text-xs text-gray-500 ml-2">(디버그: {JSON.stringify(aggregates)})</span>
                 </h2>
                 <div className="text-sm text-gray-600 mt-1 flex flex-wrap gap-4">
                   <span>페이지 {currentPage} / {pagination.totalPages || 1}</span>
