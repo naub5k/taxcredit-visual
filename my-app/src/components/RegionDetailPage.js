@@ -2,12 +2,18 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { CompanyDataBars } from './RegionDetailComponents';
 import PartnerModal from './PartnerModal';
+import performanceTracker from '../utils/performance';
+import dataCache from '../utils/dataCache';
 
 function RegionDetailPage() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState([]);
+  const [aggregates, setAggregates] = useState({});
+  const [pagination, setPagination] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState(null);
   const [showPartnerModal, setShowPartnerModal] = useState(false);
+  const [performanceMetrics, setPerformanceMetrics] = useState({});
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -31,25 +37,20 @@ function RegionDetailPage() {
     console.log('빌드 모드:', isProd ? '프로덕션' : '개발');
   }, []);
   
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        console.log(`API 호출 시작: sido=${sido}, gugun=${gugun}`);
-        
-        // ⚠️ 중요: v2 API 호출 구성 - UI 작동에 결정적인 부분
-        // API URL 결정 로직 - 환경에 따른 분기 처리
-        const baseUrl = window.location.hostname.includes("localhost")
-          ? "http://localhost:7071"
-          : "https://taxcredit-api-func-v2.azurewebsites.net";
-        
-        console.log('API 기본 URL:', baseUrl);
-        
-        // ⚠️ 중요: 여기서 v2 함수 API(getSampleList)를 호출함
-        // 이 API 호출이 UI 데이터 표시에 직접적 영향을 미침
-        const apiUrl = `${baseUrl}/api/getSampleList?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}`;
-        console.log('최종 API URL:', apiUrl);
-        
-        // 간소화된 fetch 옵션
+  // 실제 API 호출 함수 (캐싱 없이)
+  const fetchFromAPI = async (page = 1, pageSize = 20) => {
+    // API URL 결정 로직 - 환경에 따른 분기 처리
+    const baseUrl = window.location.hostname.includes("localhost")
+      ? "http://localhost:7071"
+      : "https://taxcredit-api-func-v2.azurewebsites.net";
+    
+    // 새로운 API 호출 (페이지네이션 및 집계값 포함)
+    const apiUrl = `${baseUrl}/api/getSampleList?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}&page=${page}&pageSize=${pageSize}`;
+    
+    // 성능 측정과 함께 API 호출
+    return await performanceTracker.measureAPI(
+      `getSampleList-${sido}-${gugun}-page${page}`,
+      async () => {
         const response = await fetch(apiUrl, {
           method: 'GET',
           mode: 'cors',
@@ -63,61 +64,240 @@ function RegionDetailPage() {
           throw new Error(`API 오류: ${response.status} ${response.statusText}`);
         }
         
-        // 응답 데이터 처리
-        const responseData = await response.json();
-        console.log(`데이터 ${responseData.length}건 수신됨`);
+        return await response.json();
+      }
+    );
+  };
+
+  // 데이터 로딩 함수 (캐싱 지원)
+  const fetchData = async (page = 1, pageSize = 20) => {
+    try {
+      console.log(`데이터 로딩 시작: sido=${sido}, gugun=${gugun}, page=${page}`);
+      
+      let fromCache = false;
+      
+      // 1. 캐시에서 먼저 확인
+      const cachedData = await dataCache.get(sido, gugun, page, pageSize);
+      if (cachedData) {
+        console.log('📬 캐시에서 데이터 로드됨');
+        fromCache = true;
         
-        // 필터링 검증은 유지
-        if (sido && gugun && responseData.length > 0) {
-          const matchingItems = responseData.filter(item => item.구군 === gugun);
-          console.log(`- 구군(${gugun}) 일치 항목: ${matchingItems.length}건`);
+        // 캐시된 데이터에 fromCache 정보 추가
+        if (cachedData.meta) {
+          cachedData.meta.fromCache = true;
         }
         
-        setData(responseData);
-      } catch (error) {
-        console.error("API 호출 오류:", error);
-        setError(`데이터를 불러오는 중 오류가 발생했습니다: ${error.message}`);
-      } finally {
-        setLoading(false);
+        return cachedData;
       }
-    };
-    
+      
+      // 2. 캐시에 없으면 API 호출
+      console.log('📡 API에서 데이터 로드 중...');
+      const responseData = await fetchFromAPI(page, pageSize);
+      
+      // 3. 응답 데이터에 캐시 정보 추가
+      if (responseData && responseData.meta) {
+        responseData.meta.fromCache = false;
+      }
+      
+      // 4. 응답 데이터를 캐시에 저장
+      if (responseData && !responseData.error) {
+        await dataCache.set(sido, gugun, page, pageSize, responseData);
+        
+        // 5. 선제적 캐싱 (다음 페이지들 미리 로드)
+        if (page === 1) {
+          dataCache.preloadNextPages(sido, gugun, page, pageSize, fetchFromAPI);
+        }
+      }
+      
+      return responseData;
+      
+    } catch (error) {
+      console.error("데이터 로딩 오류:", error);
+      throw error;
+    }
+  };
+
+  // 데이터 로딩 및 상태 업데이트
+  const loadAndSetData = async (page = 1, pageSize = 20) => {
+    try {
+      const responseData = await fetchData(page, pageSize);
+      
+      console.log('=== API 응답 데이터 분석 ===');
+      
+      // 응답 구조 검증
+      if (!responseData || typeof responseData !== 'object') {
+        throw new Error('Invalid API response structure');
+      }
+      
+      console.log('응답 구조:', Object.keys(responseData));
+      console.log(`데이터 배열 길이: ${responseData.data?.length || 0}`);
+      console.log('집계값:', responseData.aggregates);
+      console.log('페이지네이션:', responseData.pagination);
+      console.log('메타 정보:', responseData.meta);
+      
+      // 데이터 샘플 확인 (첫 번째 항목)
+      if (responseData.data && responseData.data.length > 0) {
+        console.log('첫 번째 데이터 샘플:', responseData.data[0]);
+      }
+      
+      // 오류 응답 확인
+      if (responseData.error) {
+        console.warn('⚠️ API 오류 응답:', responseData.error);
+        throw new Error(responseData.error.message || 'API 오류 발생');
+      }
+      
+      // 안전한 상태 업데이트 (기본값 보장)
+      setData(responseData.data || []);
+      setAggregates(responseData.aggregates || {
+        maxEmployeeCount: 0,
+        minEmployeeCount: 0,
+        avgEmployeeCount: 0,
+        totalCount: 0
+      });
+              setPagination(responseData.pagination || {
+          page: 1,
+          pageSize: 20,
+          totalCount: 0,
+          totalPages: 0,
+          hasNext: false,
+          hasPrev: false
+        });
+      setPerformanceMetrics({
+        serverCalculated: responseData.meta?.performance?.serverCalculated || false,
+        requestedAt: responseData.meta?.requestedAt || new Date().toISOString(),
+        fromCache: responseData.meta?.fromCache || false,
+        duration: responseData.meta?.performance?.duration || 0
+      });
+      
+      // 필터링 검증은 유지 (디버깅용)
+      if (sido && gugun && responseData.data?.length > 0) {
+        const matchingItems = responseData.data.filter(item => item.구군 === gugun);
+        console.log(`- 구군(${gugun}) 일치 항목: ${matchingItems.length}건`);
+        
+        // 구군 불일치 항목이 있다면 로그
+        if (matchingItems.length !== responseData.data.length) {
+          console.warn('⚠️ 구군 불일치 데이터 발견!');
+          const mismatchedItems = responseData.data.filter(item => item.구군 !== gugun);
+          console.log('불일치 항목들:', mismatchedItems.slice(0, 3));
+        }
+      }
+      
+    } catch (error) {
+      console.error("데이터 로딩 오류:", error);
+      setError(`데이터를 불러오는 중 오류가 발생했습니다: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  useEffect(() => {
     if (sido) {
-      fetchData();
+      setLoading(true);
+      loadAndSetData(currentPage);
     } else {
       setError("시도 정보가 없습니다. 이전 페이지로 돌아가 지역을 선택해주세요.");
       setLoading(false);
     }
-  }, [sido, gugun]);
-  
+  }, [sido, gugun, currentPage]);
+
   const handleBack = () => {
     navigate(-1);
   };
   
-  // 클라이언트측 필터링
-  const filteredData = useMemo(() => {
-    if (!data || data.length === 0) return [];
-    return gugun ? data.filter(item => item.구군 === gugun) : data;
-  }, [data, gugun]);
+  // 페이지 변경 핸들러
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      setCurrentPage(newPage);
+      // 스크롤을 맨 위로 이동
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
   
-  // 최대값 계산 함수
+  // 클라이언트측 필터링 (이제 서버에서 이미 필터링됨)
+  const filteredData = useMemo(() => {
+    return data || [];
+  }, [data]);
+  
+  // 최대값 계산 함수 (이제 서버에서 계산된 값 사용)
   const maxEmployeeCount = useMemo(() => {
-    if (!filteredData || filteredData.length === 0) return 0;
-    
-    return Math.max(
-      ...filteredData.flatMap(item => [
-        Number(item['2020']) || 0,
-        Number(item['2021']) || 0,
-        Number(item['2022']) || 0,
-        Number(item['2023']) || 0,
-        Number(item['2024']) || 0
-      ])
-    );
-  }, [filteredData]);
+    return aggregates.maxEmployeeCount || 0;
+  }, [aggregates]);
 
   // 파트너 모달 닫기
   const handleClosePartnerModal = () => {
     setShowPartnerModal(false);
+  };
+  
+  // 페이지네이션 컴포넌트
+  const PaginationComponent = () => {
+    if (!pagination.totalPages || pagination.totalPages <= 1) return null;
+    
+    const pages = [];
+    const maxVisiblePages = 5;
+    const startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    const endPage = Math.min(pagination.totalPages, startPage + maxVisiblePages - 1);
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    
+    return (
+      <div className="flex justify-center items-center space-x-2 mt-8 mb-4">
+        <button
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={!pagination.hasPrev}
+          className="px-3 py-2 rounded-md bg-gray-200 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
+        >
+          이전
+        </button>
+        
+        {startPage > 1 && (
+          <>
+            <button
+              onClick={() => handlePageChange(1)}
+              className="px-3 py-2 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300"
+            >
+              1
+            </button>
+            {startPage > 2 && <span className="px-2">...</span>}
+          </>
+        )}
+        
+        {pages.map(page => (
+          <button
+            key={page}
+            onClick={() => handlePageChange(page)}
+            className={`px-3 py-2 rounded-md ${
+              page === currentPage
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            {page}
+          </button>
+        ))}
+        
+        {endPage < pagination.totalPages && (
+          <>
+            {endPage < pagination.totalPages - 1 && <span className="px-2">...</span>}
+            <button
+              onClick={() => handlePageChange(pagination.totalPages)}
+              className="px-3 py-2 rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300"
+            >
+              {pagination.totalPages}
+            </button>
+          </>
+        )}
+        
+        <button
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={!pagination.hasNext}
+          className="px-3 py-2 rounded-md bg-gray-200 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
+        >
+          다음
+        </button>
+      </div>
+    );
   };
   
   if (loading) {
@@ -127,6 +307,9 @@ function RegionDetailPage() {
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600 mb-4"></div>
             <p className="text-lg text-gray-600">데이터를 불러오는 중...</p>
+            {currentPage > 1 && (
+              <p className="text-sm text-gray-500 mt-2">페이지 {currentPage} 로딩 중</p>
+            )}
           </div>
         </div>
       </div>
@@ -180,9 +363,22 @@ function RegionDetailPage() {
         {!loading && !error && (
           <>
             <div className="mb-6 flex justify-between items-center">
-              <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
-                총 검색결과: <span className="text-blue-600 font-bold">{filteredData.length}</span>개
-              </h2>
+              <div>
+                <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
+                  총 검색결과: <span className="text-blue-600 font-bold">{aggregates.totalCount || 0}</span>개
+                </h2>
+                <div className="text-sm text-gray-600 mt-1 flex flex-wrap gap-4">
+                  <span>페이지 {currentPage} / {pagination.totalPages || 1}</span>
+                  <span>최대 고용인원: {aggregates.maxEmployeeCount || 0}명</span>
+                  <span>평균 고용인원: {aggregates.avgEmployeeCount || 0}명</span>
+                  {performanceMetrics.serverCalculated && (
+                    <span className="text-green-600">서버 최적화 적용됨</span>
+                  )}
+                  {performanceMetrics.fromCache && (
+                    <span className="text-blue-600">캐시에서 로드됨</span>
+                  )}
+                </div>
+              </div>
               <div className="flex items-center">
                 <Link
                   to={`/partner?sido=${sido}&gugun=${gugun}`}
@@ -195,43 +391,48 @@ function RegionDetailPage() {
 
             {/* 업체별 상세 결과 표시 */}
             {filteredData.length > 0 ? (
-              <div className="space-y-6">
-                {filteredData.map((item, index) => (
-                  <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
-                    <div className="p-4 border-b">
-                      <h3 className="text-lg font-bold text-gray-800">{item.사업장명}</h3>
-                      <div className="text-sm text-gray-500 mt-1 flex flex-wrap gap-2">
-                        {item.업종명 && <span>{item.업종명}</span>}
-                        {item.사업자등록번호 && (
-                          <span className="bg-gray-100 px-2 py-0.5 rounded">
-                            {item.사업자등록번호}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    
-                    {/* 연도별 그래프 */}
-                    <div className="bg-gray-50">
-                      <div className="p-3 border-b">
-                        <div className="flex justify-between items-center">
-                          <h4 className="text-sm font-medium text-gray-700">연도별 고용인원 추이</h4>
-                          <div className="text-xs text-gray-500">(단위: 명)</div>
+              <>
+                <div className="space-y-6">
+                  {filteredData.map((item, index) => (
+                    <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
+                      <div className="p-4 border-b">
+                        <h3 className="text-lg font-bold text-gray-800">{item.사업장명}</h3>
+                        <div className="text-sm text-gray-500 mt-1 flex flex-wrap gap-2">
+                          {item.업종명 && <span>{item.업종명}</span>}
+                          {item.사업자등록번호 && (
+                            <span className="bg-gray-100 px-2 py-0.5 rounded">
+                              {item.사업자등록번호}
+                            </span>
+                          )}
                         </div>
-                        <CompanyDataBars item={item} maxEmployeeCount={maxEmployeeCount} />
                       </div>
                       
-                      <div className="px-4 py-3 grid grid-cols-2 gap-3 text-sm text-gray-700">
-                        <div>
-                          <span className="font-medium text-gray-500">주소:</span> {item.주소}
+                      {/* 연도별 그래프 */}
+                      <div className="bg-gray-50">
+                        <div className="p-3 border-b">
+                          <div className="flex justify-between items-center">
+                            <h4 className="text-sm font-medium text-gray-700">연도별 고용인원 추이</h4>
+                            <div className="text-xs text-gray-500">(단위: 명)</div>
+                          </div>
+                          <CompanyDataBars item={item} maxEmployeeCount={maxEmployeeCount} />
                         </div>
-                        <div>
-                          <span className="font-medium text-gray-500">대표자:</span> {item.대표자명 || '-'}
+                        
+                        <div className="px-4 py-3 grid grid-cols-2 gap-3 text-sm text-gray-700">
+                          <div>
+                            <span className="font-medium text-gray-500">주소:</span> {item.주소}
+                          </div>
+                          <div>
+                            <span className="font-medium text-gray-500">대표자:</span> {item.대표자명 || '-'}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+                
+                {/* 페이지네이션 */}
+                <PaginationComponent />
+              </>
             ) : (
               <div className="bg-white p-8 rounded-lg shadow-md text-center">
                 <div className="text-gray-400 mb-4">
