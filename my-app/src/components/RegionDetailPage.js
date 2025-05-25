@@ -38,7 +38,7 @@ function RegionDetailPage() {
   }, []);
   
   // 실제 API 호출 함수 (캐싱 없이)
-  const fetchFromAPI = async (page = 1, pageSize = 20) => {
+  const fetchFromAPI = useCallback(async (page = 1, pageSize = 20) => {
     // API URL 결정 로직 - 환경에 따른 분기 처리
     const baseUrl = window.location.hostname.includes("localhost")
       ? "http://localhost:7071"
@@ -67,10 +67,10 @@ function RegionDetailPage() {
         return await response.json();
       }
     );
-  };
+  }, [sido, gugun]);
 
   // 데이터 로딩 함수 (캐싱 지원)
-  const fetchData = async (page = 1, pageSize = 20) => {
+  const fetchData = useCallback(async (page = 1, pageSize = 20) => {
     try {
       console.log(`데이터 로딩 시작: sido=${sido}, gugun=${gugun}, page=${page}`);
       
@@ -112,7 +112,7 @@ function RegionDetailPage() {
       console.error("데이터 로딩 오류:", error);
       throw error;
     }
-  };
+  }, [sido, gugun, fetchFromAPI]);
 
   // 데이터 로딩 및 상태 업데이트
   const loadAndSetData = useCallback(async (page = 1, pageSize = 20) => {
