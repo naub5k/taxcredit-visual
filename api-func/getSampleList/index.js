@@ -44,59 +44,36 @@ module.exports = async function (context, req) {
       throw new Error('Invalid gugun parameter');
     }
     
-    // 집계값 계산 쿼리 (SQL Server 호환)
-    let aggregateQuery;
+    // WHERE 조건 생성 (집계 쿼리와 데이터 쿼리 동일하게)
+    let whereCondition;
     if (sido && gugun) {
-      aggregateQuery = `
-        SELECT 
-          MAX(ISNULL([2024], 0)) as maxEmployeeCount,
-          COUNT(*) as totalCount
-        FROM Insu_sample 
-        WHERE 시도 = N'${sido}' AND 구군 = N'${gugun}'`;
+      whereCondition = `WHERE LTRIM(RTRIM(시도)) = N'${sido.trim()}' AND LTRIM(RTRIM(구군)) = N'${gugun.trim()}'`;
     } else if (sido) {
-      aggregateQuery = `
-        SELECT 
-          MAX(ISNULL([2024], 0)) as maxEmployeeCount,
-          COUNT(*) as totalCount
-        FROM Insu_sample 
-        WHERE 시도 = N'${sido}'`;
+      whereCondition = `WHERE LTRIM(RTRIM(시도)) = N'${sido.trim()}'`;
     } else {
-      aggregateQuery = `
-        SELECT 
-          MAX(ISNULL([2024], 0)) as maxEmployeeCount,
-          COUNT(*) as totalCount
-        FROM Insu_sample 
-        WHERE 시도 IN (N'서울특별시', N'경기도')`;
+      whereCondition = `WHERE LTRIM(RTRIM(시도)) IN (N'서울특별시', N'경기도')`;
     }
     
-    // 데이터 조회 쿼리 (페이지네이션 적용 - 중요!)
-    let dataQuery;
-    if (sido && gugun) {
-      dataQuery = `
-        SELECT 사업장명, 시도, 구군, 업종명, 사업자등록번호, 사업장주소, [2020], [2021], [2022], [2023], [2024]
-        FROM Insu_sample 
-        WHERE 시도 = N'${sido}' AND 구군 = N'${gugun}'
-        ORDER BY 사업장명
-        OFFSET ${offset} ROWS FETCH NEXT ${pageSize} ROWS ONLY`;
-    } else if (sido) {
-      dataQuery = `
-        SELECT 사업장명, 시도, 구군, 업종명, 사업자등록번호, 사업장주소, [2020], [2021], [2022], [2023], [2024]
-        FROM Insu_sample 
-        WHERE 시도 = N'${sido}'
-        ORDER BY 사업장명
-        OFFSET ${offset} ROWS FETCH NEXT ${pageSize} ROWS ONLY`;
-    } else {
-      dataQuery = `
-        SELECT 사업장명, 시도, 구군, 업종명, 사업자등록번호, 사업장주소, [2020], [2021], [2022], [2023], [2024]
-        FROM Insu_sample 
-        WHERE 시도 IN (N'서울특별시', N'경기도')
-        ORDER BY 사업장명
-        OFFSET ${offset} ROWS FETCH NEXT ${pageSize} ROWS ONLY`;
-    }
+    // 집계값 계산 쿼리 (데이터 쿼리와 동일한 WHERE 조건 사용)
+    const aggregateQuery = `
+      SELECT 
+        MAX(ISNULL([2024], 0)) as maxEmployeeCount,
+        COUNT(*) as totalCount
+      FROM Insu_sample 
+      ${whereCondition}`;
+    
+    // 데이터 조회 쿼리 (집계 쿼리와 동일한 WHERE 조건 사용)
+    const dataQuery = `
+      SELECT 사업장명, 시도, 구군, 업종명, 사업자등록번호, 사업장주소, [2020], [2021], [2022], [2023], [2024]
+      FROM Insu_sample 
+      ${whereCondition}
+      ORDER BY 사업장명
+      OFFSET ${offset} ROWS FETCH NEXT ${pageSize} ROWS ONLY`;
     
     context.log('=== 쿼리 실행 시작 ===');
-    context.log('집계값 쿼리:', aggregateQuery.substring(0, 200) + '...');
-    context.log('데이터 쿼리:', dataQuery.substring(0, 200) + '...');
+    context.log('🔍 WHERE 조건:', whereCondition);
+    context.log('🔍 집계값 쿼리:', aggregateQuery);
+    context.log('🔍 데이터 쿼리:', dataQuery.substring(0, 200) + '...');
     
     // 성능 측정 시작
     const startTime = Date.now();
