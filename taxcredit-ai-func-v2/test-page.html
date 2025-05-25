@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>세무 크레딧 AI 함수 테스트</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 10px;
+    }
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    select, input, textarea, button {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    #result {
+      white-space: pre-wrap;
+      background-color: #f5f5f5;
+      padding: 15px;
+      border-radius: 4px;
+      min-height: 100px;
+    }
+    .loading {
+      text-align: center;
+      color: #666;
+    }
+    .warning {
+      background-color: #fff3cd;
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      border-left: 4px solid #ffc107;
+    }
+    .instructions {
+      background-color: #e9f5ff;
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      border-left: 4px solid #007bff;
+    }
+  </style>
+</head>
+<body>
+  <h1>세무 크레딧 AI 함수 테스트</h1>
+  
+  <div class="warning">
+    <strong>CORS 오류 발생:</strong> 브라우저에서 직접 Azure 함수를 호출하면 CORS 오류가 발생할 수 있습니다.<br>
+    아래 <strong>콘솔 테스트 방법</strong>을 참조하여 테스트하는 것을 권장합니다.
+  </div>
+  
+  <div class="instructions">
+    <strong>콘솔 테스트 방법:</strong><br>
+    1. 명령 프롬프트 또는 PowerShell 창을 엽니다.<br>
+    2. <code>cd D:\projects\taxcredit_mobileapp\taxcredit-ai-func-v2</code>로 이동합니다.<br>
+    3. <code>npm run test:simple</code> 명령어로 테스트합니다.
+  </div>
+  
+  <div class="card">
+    <label for="modelSelect">모델 선택:</label>
+    <select id="modelSelect">
+      <option value="gpt">GPT-3.5 Turbo</option>
+      <option value="gemini">Google Gemini</option>
+      <option value="search">검색 요약</option>
+    </select>
+    
+    <label for="inputText">질문 입력:</label>
+    <textarea id="inputText" rows="4" placeholder="여기에 질문을 입력하세요. 예: '세무사무소의 주요 업무는 무엇인가요?'"></textarea>
+    
+    <button id="submitBtn">질문하기</button>
+    
+    <div id="loadingDiv" class="loading" style="display: none;">
+      응답을 기다리는 중입니다...
+    </div>
+    
+    <label for="result">응답 결과:</label>
+    <div id="result"></div>
+  </div>
+
+  <script>
+    // 함수 엔드포인트 URL
+    const API_URL = 'https://taxcredit-ai-func-v2.azurewebsites.net/api/aimodelquery';
+    
+    // 버튼 클릭 이벤트 핸들러
+    document.getElementById('submitBtn').addEventListener('click', async function() {
+      const model = document.getElementById('modelSelect').value;
+      const input = document.getElementById('inputText').value.trim();
+      const resultDiv = document.getElementById('result');
+      const loadingDiv = document.getElementById('loadingDiv');
+      
+      // 입력 검증
+      if (!input) {
+        resultDiv.textContent = '질문을 입력해주세요.';
+        return;
+      }
+      
+      // 로딩 표시
+      resultDiv.textContent = '';
+      loadingDiv.style.display = 'block';
+      
+      try {
+        // CORS 경고 메시지
+        resultDiv.textContent = 'CORS 오류가 발생할 수 있습니다. CORS 설정이 필요하거나 콘솔 테스트를 권장합니다.\n\n';
+        
+        // API 호출 시도
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ model, input }),
+        });
+        
+        // 응답 처리
+        const data = await response.json();
+        
+        if (response.ok) {
+          resultDiv.textContent += data.result || '결과가 없습니다.';
+        } else {
+          resultDiv.textContent += `오류: ${data.error || '알 수 없는 오류가 발생했습니다.'}`;
+        }
+      } catch (error) {
+        resultDiv.textContent += `오류: ${error.message}\n\n대신 PowerShell 또는 명령 프롬프트에서 다음 명령어로 테스트해보세요:\nnpm run test:simple`;
+      } finally {
+        // 로딩 표시 제거
+        loadingDiv.style.display = 'none';
+      }
+    });
+    
+    // 기본 예시 질문 설정
+    document.getElementById('modelSelect').addEventListener('change', function() {
+      const model = this.value;
+      const inputText = document.getElementById('inputText');
+      
+      switch (model) {
+        case 'gpt':
+          inputText.placeholder = '세무사무소의 주요 업무는 무엇인가요?';
+          break;
+        case 'gemini':
+          inputText.placeholder = '개인사업자가 알아야 할 세금 종류를 설명해주세요.';
+          break;
+        case 'search':
+          inputText.placeholder = '서울시 강남구 세무사무소';
+          break;
+      }
+    });
+  </script>
+</body>
+</html> 

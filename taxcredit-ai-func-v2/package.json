@@ -1,0 +1,34 @@
+{
+  "name": "taxcredit-ai-func-v2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/aimodelquery/index.js",
+  "scripts": {
+    "start": "func start",
+    "start:alt": "func start --port 7072",
+    "test": "node test.js",
+    "test:azure": "node test.js --azure",
+    "test:azure:detail": "node detailed-azure-test.js",
+    "test:simple": "node simple-test.js",
+    "test:keys": "node key-test.js",
+    "test:with-env": "set-env-and-test.bat",
+    "test:with-env:ps": "powershell -ExecutionPolicy Bypass -File .\\set-env-and-test.ps1",
+    "browser-test": "start test-page.html",
+    "build": "echo Building...",
+    "deploy": "func azure functionapp publish taxcredit-ai-func-v2 --javascript",
+    "deploy:staging": "func azure functionapp publish taxcredit-ai-func-v2-staging --javascript",
+    "deploy-and-test": "node deploy-and-test.js",
+    "set-env": "az functionapp config appsettings set --name taxcredit-ai-func-v2 --resource-group taxcredit-ai-rg --settings OPENAI_API_KEY= SERPAPI_KEY= GEMINI_API_KEY=",
+    "get-url": "az functionapp function show --name taxcredit-ai-func-v2 --resource-group taxcredit-ai-rg --function-name aiModelQuery --query invokeUrlTemplate --output tsv",
+    "restart-func": "az functionapp restart --name taxcredit-ai-func-v2 --resource-group taxcredit-ai-rg"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.7.0",
+    "@google/generative-ai": "^0.24.1",
+    "axios": "^1.9.0",
+    "dotenv": "^16.5.0"
+  },
+  "devDependencies": {
+    "azure-functions-core-tools": "^4.x"
+  }
+}
