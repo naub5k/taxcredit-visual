@@ -371,7 +371,7 @@ function RegionDetailPage() {
               <div>
                 <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
                   총 검색결과: <span className="text-blue-600 font-bold">{aggregates.totalCount || 0}</span>개
-                  <span className="text-xs text-gray-500 ml-2">(디버그: {JSON.stringify(aggregates)})</span>
+                  <span className="hidden sm:inline text-gray-400 text-xs ml-2">(디버그: {JSON.stringify(aggregates)})</span>
                 </h2>
                 <div className="text-sm text-gray-600 mt-1 flex flex-wrap gap-4">
                   <span>페이지 {currentPage} / {pagination.totalPages || 1}</span>
