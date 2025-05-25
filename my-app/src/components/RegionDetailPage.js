@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { CompanyDataBars } from './RegionDetailComponents';
 import PartnerModal from './PartnerModal';
@@ -74,13 +74,10 @@ function RegionDetailPage() {
     try {
       console.log(`데이터 로딩 시작: sido=${sido}, gugun=${gugun}, page=${page}`);
       
-      let fromCache = false;
-      
       // 1. 캐시에서 먼저 확인
       const cachedData = await dataCache.get(sido, gugun, page, pageSize);
       if (cachedData) {
         console.log('📬 캐시에서 데이터 로드됨');
-        fromCache = true;
         
         // 캐시된 데이터에 fromCache 정보 추가
         if (cachedData.meta) {
@@ -118,7 +115,7 @@ function RegionDetailPage() {
   };
 
   // 데이터 로딩 및 상태 업데이트
-  const loadAndSetData = async (page = 1, pageSize = 20) => {
+  const loadAndSetData = useCallback(async (page = 1, pageSize = 20) => {
     try {
       const responseData = await fetchData(page, pageSize);
       
@@ -188,7 +185,7 @@ function RegionDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchData, sido, gugun]);
   
   useEffect(() => {
     if (sido) {
@@ -198,7 +195,7 @@ function RegionDetailPage() {
       setError("시도 정보가 없습니다. 이전 페이지로 돌아가 지역을 선택해주세요.");
       setLoading(false);
     }
-  }, [sido, gugun, currentPage]);
+  }, [sido, gugun, currentPage, loadAndSetData]);
 
   const handleBack = () => {
     navigate(-1);
@@ -417,12 +414,9 @@ function RegionDetailPage() {
                           <CompanyDataBars item={item} maxEmployeeCount={maxEmployeeCount} />
                         </div>
                         
-                        <div className="px-4 py-3 grid grid-cols-2 gap-3 text-sm text-gray-700">
+                        <div className="px-4 py-3 grid grid-cols-1 gap-3 text-sm text-gray-700">
                           <div>
-                            <span className="font-medium text-gray-500">주소:</span> {item.주소}
-                          </div>
-                          <div>
-                            <span className="font-medium text-gray-500">대표자:</span> {item.대표자명 || '-'}
+                            <span className="font-medium text-gray-500">주소:</span> {item.사업장주소}
                           </div>
                         </div>
                       </div>
