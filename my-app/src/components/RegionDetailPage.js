@@ -402,7 +402,12 @@ function RegionDetailPage() {
                   {filteredData.map((item, index) => (
                     <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
                       <div className="p-4 border-b">
-                        <h3 className="text-lg font-bold text-gray-800">{item.사업장명}</h3>
+                        <h3 
+                          className="text-lg font-bold text-gray-800 cursor-pointer hover:text-blue-600 transition-colors"
+                          onClick={() => navigate(`/company/${item.사업자등록번호}`)}
+                        >
+                          {item.사업장명}
+                        </h3>
                         <div className="text-sm text-gray-500 mt-1 flex flex-wrap gap-2">
                           {item.업종명 && <span>{item.업종명}</span>}
                           {item.사업자등록번호 && (

@@ -25,6 +25,7 @@ module.exports = async function (context, req) {
     // 요청 파라미터 추출 및 로깅
     const sido = req.query.sido || null;
     const gugun = req.query.gugun || null;
+    const bizno = req.query.bizno || null; // 사업자등록번호 추가
     const page = parseInt(req.query.page) || 1;
     const pageSize = parseInt(req.query.pageSize) || 20;
     const offset = (page - 1) * pageSize;
@@ -32,6 +33,7 @@ module.exports = async function (context, req) {
     context.log(`=== 파라미터 확인 ===`);
     context.log(`sido: ${sido}`);
     context.log(`gugun: ${gugun}`);
+    context.log(`bizno: ${bizno}`);
     context.log(`page: ${page}`);
     context.log(`pageSize: ${pageSize}`);
     context.log(`offset: ${offset}`);
@@ -43,10 +45,16 @@ module.exports = async function (context, req) {
     if (gugun && !/^[가-힣a-zA-Z\s]+$/.test(gugun)) {
       throw new Error('Invalid gugun parameter');
     }
+    if (bizno && !/^[0-9]+$/.test(bizno)) {
+      throw new Error('Invalid bizno parameter');
+    }
     
     // WHERE 조건 생성 (집계 쿼리와 데이터 쿼리 동일하게)
     let whereCondition;
-    if (sido && gugun) {
+    if (bizno) {
+      // 사업자등록번호 기반 조회 (단일 회사)
+      whereCondition = `WHERE 사업자등록번호 = '${bizno}'`;
+    } else if (sido && gugun) {
       whereCondition = `WHERE LTRIM(RTRIM(시도)) = N'${sido.trim()}' AND LTRIM(RTRIM(구군)) = N'${gugun.trim()}'`;
     } else if (sido) {
       whereCondition = `WHERE LTRIM(RTRIM(시도)) = N'${sido.trim()}'`;

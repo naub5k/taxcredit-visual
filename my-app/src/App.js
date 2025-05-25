@@ -4,6 +4,7 @@ import RegionSelector from './components/RegionSelector';
 import RegionChart from './components/RegionChart';
 import MobileRegionDetail from './components/MobileRegionDetail';
 import RegionDetailPage from './components/RegionDetailPage';
+import CompanyDetailPage from './components/CompanyDetailPage';
 import { RegionSummaryBox, PartnerServiceLink } from './components/RegionDetailComponents';
 import PartnerModal from './components/PartnerModal';
 import DataApiTest from './components/DataApiTest';
@@ -320,6 +321,7 @@ function App() {
         <Route path="/" element={<AppContent />} />
         <Route path="/region" element={<RegionDetailPage />} />
         <Route path="/region-detail" element={<RegionDetailPage />} />
+        <Route path="/company/:bizno" element={<CompanyDetailPage />} />
         <Route path="/api-test" element={<DataApiTest />} />
       </Routes>
     </Router>
