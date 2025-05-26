@@ -28,6 +28,18 @@
       "priority": 150
     },
     {
+      "route": "/company/*",
+      "serve": "/index.html",
+      "statusCode": 200,
+      "priority": 200
+    },
+    {
+      "route": "/region*",
+      "serve": "/index.html",
+      "statusCode": 200,
+      "priority": 200
+    },
+    {
       "route": "/*",
       "serve": "/index.html",
       "statusCode": 200,
@@ -36,7 +48,7 @@
   ],
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/api/*", "/images/*", "/*.ico", "/*.png", "/*.svg"]
+    "exclude": ["/api/*", "/images/*", "/*.ico", "/*.png", "/*.svg", "/static/*", "/*.js", "/*.css", "/*.map", "/manifest.json", "/favicon.ico"]
   },
   "responseOverrides": {
     "404": {
@@ -47,7 +59,13 @@
     "apiRuntime": "node:18"
   },
   "mimeTypes": {
-    ".json": "application/json"
+    ".json": "application/json",
+    ".js": "application/javascript",
+    ".css": "text/css",
+    ".map": "application/json",
+    ".ico": "image/x-icon",
+    ".png": "image/png",
+    ".svg": "image/svg+xml"
   },
   "globalHeaders": {
     "Access-Control-Allow-Origin": "*",
