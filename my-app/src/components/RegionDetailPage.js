@@ -402,19 +402,32 @@ function RegionDetailPage() {
                   {filteredData.map((item, index) => (
                     <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
                       <div className="p-4 border-b">
-                        <h3 
-                          className="text-lg font-bold text-gray-800 cursor-pointer hover:text-blue-600 transition-colors"
-                          onClick={() => navigate(`/company/${item.사업자등록번호}`)}
-                        >
-                          {item.사업장명}
-                        </h3>
-                        <div className="text-sm text-gray-500 mt-1 flex flex-wrap gap-2">
-                          {item.업종명 && <span>{item.업종명}</span>}
-                          {item.사업자등록번호 && (
-                            <span className="bg-gray-100 px-2 py-0.5 rounded">
-                              {item.사업자등록번호}
-                            </span>
-                          )}
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h3 
+                              className="text-lg font-bold text-gray-800 cursor-pointer hover:text-blue-600 transition-colors"
+                              onClick={() => navigate(`/company/${item.사업자등록번호}`)}
+                            >
+                              {item.사업장명}
+                            </h3>
+                            <div className="text-sm text-gray-500 mt-1 flex flex-wrap gap-2">
+                              {item.업종명 && <span>{item.업종명}</span>}
+                              {item.사업자등록번호 && (
+                                <span className="bg-gray-100 px-2 py-0.5 rounded">
+                                  {item.사업자등록번호}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => navigate(`/company/${item.사업자등록번호}`)}
+                            className="ml-4 px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors flex items-center"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
+                            상세보기
+                          </button>
                         </div>
                       </div>
                       
