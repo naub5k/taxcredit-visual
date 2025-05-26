@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { CompanyDataBars } from './RegionDetailComponents';
 import PartnerModal from './PartnerModal';
 import performanceTracker from '../utils/performance';
@@ -206,12 +206,8 @@ function RegionDetailPage() {
   }, [sido, gugun, currentPage, loadAndSetData]);
 
   const handleBack = () => {
-    // 브라우저 히스토리가 있으면 뒤로가기, 없으면 홈으로
-    if (window.history.length > 1) {
-      navigate(-1);
-    } else {
-      navigate('/');
-    }
+    // 강제로 홈페이지로 이동
+    navigate('/', { replace: true });
   };
   
   // 페이지 변경 핸들러
@@ -391,12 +387,12 @@ function RegionDetailPage() {
                 </div>
               </div>
               <div className="flex items-center">
-                <button
-                  onClick={() => setShowPartnerModal(true)}
-                  className="text-purple-700 font-semibold hover:underline flex items-center cursor-pointer"
+                <Link
+                  to={`/partner?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}`}
+                  className="text-purple-700 font-semibold hover:underline flex items-center"
                 >
                   파트너 전용 <span className="ml-1">&gt;</span>
-                </button>
+                </Link>
               </div>
             </div>
 
