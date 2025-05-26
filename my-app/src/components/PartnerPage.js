@@ -95,7 +95,7 @@ function PartnerPage() {
             </button>
             <div>
               <h1 className="text-xl font-bold">파트너 전용 페이지</h1>
-              <p className="text-sm opacity-90">고급 검색 및 분석 도구</p>
+              <p className="text-sm opacity-90">사업장 검색 및 분석 도구</p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
@@ -107,13 +107,10 @@ function PartnerPage() {
       <main className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
         {/* 검색 섹션 */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">고급 검색</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">검색 (사업장명 or 사업자등록번호)</h2>
           
           {/* 검색바 */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              통합 검색
-            </label>
+          <div>
             <div className="flex">
               <input
                 type="text"
@@ -121,76 +118,21 @@ function PartnerPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                 placeholder="사업장명 또는 사업자등록번호를 검색하세요..."
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg"
               />
               <button
                 onClick={handleSearch}
                 disabled={loading}
-                className="px-6 py-3 bg-purple-600 text-white rounded-r-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 transition-colors"
+                className="px-8 py-3 bg-purple-600 text-white rounded-r-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 transition-colors font-semibold"
               >
                 {loading ? '검색중...' : '검색'}
               </button>
             </div>
-          </div>
-
-          {/* 필터 섹션 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">시도</label>
-              <select
-                value={filters.sido}
-                onChange={(e) => setFilters(prev => ({ ...prev, sido: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-              >
-                <option value="">전체</option>
-                <option value="서울특별시">서울특별시</option>
-                <option value="경기도">경기도</option>
-                <option value="인천광역시">인천광역시</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">구군</label>
-              <select
-                value={filters.gugun}
-                onChange={(e) => setFilters(prev => ({ ...prev, gugun: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-              >
-                <option value="">전체</option>
-                <option value="강남구">강남구</option>
-                <option value="강서구">강서구</option>
-                <option value="마포구">마포구</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">업종</label>
-              <select
-                value={filters.industry}
-                onChange={(e) => setFilters(prev => ({ ...prev, industry: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-              >
-                <option value="">전체</option>
-                <option value="제조업">제조업</option>
-                <option value="서비스업">서비스업</option>
-                <option value="IT">정보통신업</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">고용인원</label>
-              <select
-                value={filters.employeeRange}
-                onChange={(e) => setFilters(prev => ({ ...prev, employeeRange: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-              >
-                <option value="">전체</option>
-                <option value="1-10">1-10명</option>
-                <option value="11-50">11-50명</option>
-                <option value="51-100">51-100명</option>
-                <option value="100+">100명 이상</option>
-              </select>
-            </div>
+            <p className="text-sm text-gray-500 mt-2">
+              • 사업장명: 부분 검색 가능 (예: "노무법인", "춘추")
+              <br />
+              • 사업자등록번호: 정확한 번호 입력 (예: "1148638828")
+            </p>
           </div>
         </div>
 
