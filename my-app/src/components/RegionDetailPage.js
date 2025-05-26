@@ -38,7 +38,7 @@ function RegionDetailPage() {
   }, []);
   
   // 실제 API 호출 함수 (캐싱 없이)
-  const fetchFromAPI = useCallback(async (page = 1, pageSize = 20) => {
+  const fetchFromAPI = useCallback(async (page = 1, pageSize = 10) => {
     // API URL 결정 로직 - 환경에 따른 분기 처리
     const baseUrl = window.location.hostname.includes("localhost")
       ? "http://localhost:7071"
@@ -70,7 +70,7 @@ function RegionDetailPage() {
   }, [sido, gugun]);
 
   // 데이터 로딩 함수 (캐싱 지원)
-  const fetchData = useCallback(async (page = 1, pageSize = 20) => {
+  const fetchData = useCallback(async (page = 1, pageSize = 10) => {
     try {
       console.log(`데이터 로딩 시작: sido=${sido}, gugun=${gugun}, page=${page}`);
       
@@ -115,7 +115,7 @@ function RegionDetailPage() {
   }, [sido, gugun, fetchFromAPI]);
 
   // 데이터 로딩 및 상태 업데이트
-  const loadAndSetData = useCallback(async (page = 1, pageSize = 20) => {
+  const loadAndSetData = useCallback(async (page = 1, pageSize = 10) => {
     try {
       const responseData = await fetchData(page, pageSize);
       
@@ -161,7 +161,7 @@ function RegionDetailPage() {
       setAggregates(aggregatesData);
               setPagination(responseData.pagination || {
           page: 1,
-          pageSize: 20,
+          pageSize: 10,
           totalCount: 0,
           totalPages: 0,
           hasNext: false,
@@ -370,18 +370,18 @@ function RegionDetailPage() {
             <div className="mb-6 flex justify-between items-center">
               <div>
                 <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
-                  총 검색결과: <span className="text-blue-600 font-bold">{aggregates.totalCount || 0}</span>개
-                  <span className="hidden sm:inline text-gray-400 text-xs ml-2">(디버그: {JSON.stringify(aggregates)})</span>
+                  전체 기업수: <span className="text-blue-600 font-bold">{(aggregates.totalCount || 0).toLocaleString()}</span>개
+                  <span className="hidden lg:inline text-gray-400 text-xs ml-2">(디버그: {JSON.stringify(aggregates)})</span>
                 </h2>
                 <div className="text-sm text-gray-600 mt-1 flex flex-wrap gap-4">
                   <span>페이지 {currentPage} / {pagination.totalPages || 1}</span>
-                  <span>최대 고용인원: {aggregates.maxEmployeeCount || 0}명</span>
-                  <span>평균 고용인원: {aggregates.avgEmployeeCount || 0}명</span>
+                  <span className="hidden md:inline">최대 고용인원: {aggregates.maxEmployeeCount || 0}명</span>
+                  <span className="hidden md:inline">평균 고용인원: {aggregates.avgEmployeeCount || 0}명</span>
                   {performanceMetrics.serverCalculated && (
-                    <span className="text-green-600">서버 최적화 적용됨</span>
+                    <span className="hidden lg:inline text-green-600">서버 최적화 적용됨</span>
                   )}
                   {performanceMetrics.fromCache && (
-                    <span className="text-blue-600">캐시에서 로드됨</span>
+                    <span className="hidden lg:inline text-blue-600">캐시에서 로드됨</span>
                   )}
                 </div>
               </div>

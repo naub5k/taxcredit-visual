@@ -27,7 +27,7 @@ module.exports = async function (context, req) {
     const gugun = req.query.gugun || null;
     const bizno = req.query.bizno || null; // 사업자등록번호 추가
     const page = parseInt(req.query.page) || 1;
-    const pageSize = parseInt(req.query.pageSize) || 20;
+    const pageSize = parseInt(req.query.pageSize) || 10;
     const offset = (page - 1) * pageSize;
     
     context.log(`=== 파라미터 확인 ===`);
