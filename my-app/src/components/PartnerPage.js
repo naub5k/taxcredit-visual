@@ -5,6 +5,7 @@ function PartnerPage() {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [data, setData] = useState([]);
+  const [searchResultCount, setSearchResultCount] = useState(0);
   const [filters, setFilters] = useState({
     sido: '',
     gugun: '',
@@ -14,6 +15,12 @@ function PartnerPage() {
   
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // 사업자등록번호 표준 표기법 변환 함수
+  const formatBusinessNumber = (bizno) => {
+    if (!bizno || bizno.length !== 10) return bizno;
+    return `${bizno.slice(0, 3)}-${bizno.slice(3, 5)}-${bizno.slice(5)}`;
+  };
   
   // URL에서 초기 파라미터 가져오기
   useEffect(() => {
@@ -68,12 +75,15 @@ function PartnerPage() {
       console.log('검색 결과:', responseData);
       
       // 검색 결과 설정
-      setData(responseData.data || []);
+      const resultData = responseData.data || [];
+      setData(resultData);
+      setSearchResultCount(resultData.length);
       
     } catch (error) {
       console.error('검색 오류:', error);
       alert('검색 중 오류가 발생했습니다: ' + error.message);
       setData([]);
+      setSearchResultCount(0);
     } finally {
       setLoading(false);
     }
@@ -131,7 +141,7 @@ function PartnerPage() {
             <p className="text-sm text-gray-500 mt-2">
               • 사업장명: 부분 검색 가능 (예: "노무법인", "춘추")
               <br />
-              • 사업자등록번호: 정확한 번호 입력 (예: "1148638828")
+              • 사업자등록번호: 하이픈 없이 10자리 입력 (예: "1148638828" → 114-86-38828로 표시)
             </p>
           </div>
         </div>
@@ -139,7 +149,14 @@ function PartnerPage() {
         {/* 결과 섹션 */}
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-bold text-gray-800">검색 결과</h3>
+            <div>
+              <h3 className="text-xl font-bold text-gray-800">검색 결과</h3>
+              {searchResultCount > 0 && (
+                <p className="text-sm text-gray-600 mt-1">
+                  총 <span className="font-semibold text-purple-600">{searchResultCount.toLocaleString()}</span>개의 사업장이 검색되었습니다.
+                </p>
+              )}
+            </div>
             <div className="text-sm text-gray-500">
               파트너 전용 고급 데이터
             </div>
@@ -163,7 +180,7 @@ function PartnerPage() {
                         {item.사업장명}
                       </h4>
                       <div className="text-sm text-gray-500 mt-1 space-y-1">
-                        <div>사업자등록번호: <span className="font-mono">{item.사업자등록번호}</span></div>
+                        <div>사업자등록번호: <span className="font-mono">{formatBusinessNumber(item.사업자등록번호)}</span></div>
                         <div>업종: {item.업종명}</div>
                         <div>주소: {item.사업장주소}</div>
                         <div>최근 고용인원: <span className="font-semibold text-purple-600">{item['2024'] || 0}명</span></div>
