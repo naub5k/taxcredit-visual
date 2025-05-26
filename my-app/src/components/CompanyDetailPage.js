@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { CompanyDataBars } from './RegionDetailComponents';
+import CompanyDescriptionBlock from './CompanyDescriptionBlock';
 import performanceTracker from '../utils/performance';
 
 function CompanyDetailPage() {
@@ -276,6 +277,9 @@ function CompanyDetailPage() {
             ))}
           </div>
         </div>
+
+        {/* 기업 설명 블럭 */}
+        <CompanyDescriptionBlock bizno={bizno} className="mb-6" />
 
         {/* 추가 정보 (향후 AI 분석 결과가 들어갈 영역) */}
         <div className="bg-white rounded-lg shadow-md p-6">
