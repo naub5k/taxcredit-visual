@@ -11,6 +11,12 @@ function CompanyDetailPage() {
   const [companyData, setCompanyData] = useState(null);
   const [error, setError] = useState(null);
 
+  // 사업자등록번호 표준 표기법 변환 함수
+  const formatBusinessNumber = (bizno) => {
+    if (!bizno || bizno.length !== 10) return bizno;
+    return `${bizno.slice(0, 3)}-${bizno.slice(3, 5)}-${bizno.slice(5)}`;
+  };
+
   // API 호출 함수
   const fetchCompanyDetail = async (businessNumber) => {
     try {
@@ -162,7 +168,7 @@ function CompanyDetailPage() {
       <div className="min-h-screen bg-gray-100 p-4">
         <div className="bg-white rounded-lg shadow-md p-6 text-center">
           <h2 className="text-xl font-bold mb-2">회사 정보를 찾을 수 없습니다</h2>
-          <p className="text-gray-600 mb-4">사업자등록번호: {bizno}</p>
+          <p className="text-gray-600 mb-4">사업자등록번호: <span className="font-mono">{formatBusinessNumber(bizno)}</span></p>
           <button 
             onClick={handleBack}
             className="bg-blue-600 text-white py-2.5 px-4 rounded-md hover:bg-blue-700 transition-colors"
@@ -211,7 +217,7 @@ function CompanyDetailPage() {
               <div className="space-y-3">
                 <div>
                   <span className="font-medium text-gray-600">사업자등록번호:</span>
-                  <span className="ml-2 text-gray-800">{companyData.사업자등록번호}</span>
+                  <span className="ml-2 text-gray-800 font-mono">{formatBusinessNumber(companyData.사업자등록번호)}</span>
                 </div>
                 <div>
                   <span className="font-medium text-gray-600">업종:</span>

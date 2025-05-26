@@ -17,6 +17,12 @@ function RegionDetailPage() {
   const navigate = useNavigate();
   const location = useLocation();
   
+  // 사업자등록번호 표준 표기법 변환 함수
+  const formatBusinessNumber = (bizno) => {
+    if (!bizno || bizno.length !== 10) return bizno;
+    return `${bizno.slice(0, 3)}-${bizno.slice(3, 5)}-${bizno.slice(5)}`;
+  };
+  
   // URL에서 쿼리 파라미터 가져오기 (영문 키만 사용)
   const queryParams = new URLSearchParams(location.search);
   const sido = queryParams.get('sido');
@@ -414,8 +420,8 @@ function RegionDetailPage() {
                             <div className="text-sm text-gray-500 mt-1 flex flex-wrap gap-2">
                               {item.업종명 && <span>{item.업종명}</span>}
                               {item.사업자등록번호 && (
-                                <span className="bg-gray-100 px-2 py-0.5 rounded">
-                                  {item.사업자등록번호}
+                                <span className="bg-gray-100 px-2 py-0.5 rounded font-mono">
+                                  {formatBusinessNumber(item.사업자등록번호)}
                                 </span>
                               )}
                             </div>
