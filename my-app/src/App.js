@@ -321,6 +321,7 @@ function App() {
         <Route path="/" element={<AppContent />} />
         <Route path="/region" element={<RegionDetailPage />} />
         <Route path="/region-detail" element={<RegionDetailPage />} />
+        <Route path="/partner" element={<RegionDetailPage />} />
         <Route path="/company/:bizno" element={<CompanyDetailPage />} />
         <Route path="/api-test" element={<DataApiTest />} />
       </Routes>
