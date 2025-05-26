@@ -35,22 +35,46 @@ function PartnerPage() {
   };
 
   const handleSearch = async () => {
+    if (!searchTerm.trim()) {
+      alert('검색어를 입력해주세요.');
+      return;
+    }
+
     setLoading(true);
     try {
-      // 여기에 파트너 전용 API 호출 로직 추가
       console.log('파트너 검색 실행:', { searchTerm, filters });
       
-      // 임시 데이터 (실제로는 API 호출)
-      setTimeout(() => {
-        setData([
-          { id: 1, name: '파트너 전용 데이터 1', type: 'premium' },
-          { id: 2, name: '파트너 전용 데이터 2', type: 'premium' }
-        ]);
-        setLoading(false);
-      }, 1000);
+      // API URL 결정
+      const baseUrl = window.location.hostname.includes("localhost")
+        ? "http://localhost:7071"
+        : "https://taxcredit-ai-func-v2.azurewebsites.net";
+      
+      // 검색 API 호출 (사업장명 또는 사업자등록번호)
+      const apiUrl = `${baseUrl}/api/getSampleList?search=${encodeURIComponent(searchTerm.trim())}&page=1&pageSize=20`;
+      
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        mode: 'cors',
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API 오류: ${response.status} ${response.statusText}`);
+      }
+      
+      const responseData = await response.json();
+      console.log('검색 결과:', responseData);
+      
+      // 검색 결과 설정
+      setData(responseData.data || []);
       
     } catch (error) {
       console.error('검색 오류:', error);
+      alert('검색 중 오류가 발생했습니다: ' + error.message);
+      setData([]);
+    } finally {
       setLoading(false);
     }
   };
@@ -95,7 +119,8 @@ function PartnerPage() {
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="회사명, 사업자등록번호, 업종 등을 검색하세요..."
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                placeholder="사업장명 또는 사업자등록번호를 검색하세요..."
                 className="flex-1 px-4 py-3 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               />
               <button
@@ -185,14 +210,30 @@ function PartnerPage() {
             </div>
           ) : data.length > 0 ? (
             <div className="space-y-4">
-              {data.map((item) => (
-                <div key={item.id} className="border border-purple-200 rounded-lg p-4 hover:bg-purple-50 transition-colors">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h4 className="font-semibold text-gray-800">{item.name}</h4>
-                      <span className="text-sm text-purple-600 font-medium">{item.type}</span>
+              {data.map((item, index) => (
+                <div key={index} className="border border-purple-200 rounded-lg p-4 hover:bg-purple-50 transition-colors">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <h4 
+                        className="font-semibold text-gray-800 cursor-pointer hover:text-purple-600 transition-colors"
+                        onClick={() => navigate(`/company/${item.사업자등록번호}`)}
+                      >
+                        {item.사업장명}
+                      </h4>
+                      <div className="text-sm text-gray-500 mt-1 space-y-1">
+                        <div>사업자등록번호: <span className="font-mono">{item.사업자등록번호}</span></div>
+                        <div>업종: {item.업종명}</div>
+                        <div>주소: {item.사업장주소}</div>
+                        <div>최근 고용인원: <span className="font-semibold text-purple-600">{item['2024'] || 0}명</span></div>
+                      </div>
                     </div>
-                    <button className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                    <button 
+                      onClick={() => navigate(`/company/${item.사업자등록번호}`)}
+                      className="ml-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
                       상세보기
                     </button>
                   </div>
