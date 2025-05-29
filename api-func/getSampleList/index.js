@@ -26,14 +26,16 @@ module.exports = async function (context, req) {
     const sido = req.query.sido || null;
     const gugun = req.query.gugun || null;
     const bizno = req.query.bizno || null; // 사업자등록번호 추가
+    const search = req.query.search || null; // 검색어 추가 (사업장명 또는 사업자등록번호)
     const page = parseInt(req.query.page) || 1;
-    const pageSize = parseInt(req.query.pageSize) || 10;
+    const pageSize = parseInt(req.query.pageSize) || 20; // 기본값을 20으로 변경
     const offset = (page - 1) * pageSize;
     
     context.log(`=== 파라미터 확인 ===`);
     context.log(`sido: ${sido}`);
     context.log(`gugun: ${gugun}`);
     context.log(`bizno: ${bizno}`);
+    context.log(`search: ${search}`);
     context.log(`page: ${page}`);
     context.log(`pageSize: ${pageSize}`);
     context.log(`offset: ${offset}`);
@@ -48,10 +50,22 @@ module.exports = async function (context, req) {
     if (bizno && !/^[0-9]+$/.test(bizno)) {
       throw new Error('Invalid bizno parameter');
     }
+    if (search && !/^[가-힣a-zA-Z0-9\s\(\)]+$/.test(search)) {
+      throw new Error('Invalid search parameter');
+    }
     
     // WHERE 조건 생성 (집계 쿼리와 데이터 쿼리 동일하게)
     let whereCondition;
-    if (bizno) {
+    if (search) {
+      // 검색어 기반 조회 (사업장명 LIKE 또는 사업자등록번호 정확 일치)
+      const searchTerm = search.trim();
+      // 숫자만 있으면 사업자등록번호로 검색, 아니면 사업장명으로 검색
+      if (/^[0-9]+$/.test(searchTerm)) {
+        whereCondition = `WHERE 사업자등록번호 = '${searchTerm}'`;
+      } else {
+        whereCondition = `WHERE 사업장명 LIKE N'%${searchTerm}%'`;
+      }
+    } else if (bizno) {
       // 사업자등록번호 기반 조회 (단일 회사)
       whereCondition = `WHERE 사업자등록번호 = '${bizno}'`;
     } else if (sido && gugun) {
@@ -142,7 +156,7 @@ module.exports = async function (context, req) {
       },
       meta: {
         requestedAt: new Date().toISOString(),
-        filters: { sido, gugun, page, pageSize },
+        filters: { sido, gugun, bizno, search, page, pageSize },
         performance: {
           serverCalculated: true,
           duration: duration,

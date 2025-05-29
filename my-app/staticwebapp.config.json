@@ -8,6 +8,13 @@
       "priority": 100
     },
     {
+      "route": "/api/analyze/*",
+      "allowedRoles": ["anonymous"],
+      "serve": "https://taxcredit-ai-func-v2.azurewebsites.net/api/analyze/{*restOfPath}",
+      "methods": ["GET", "POST", "OPTIONS"],
+      "priority": 90
+    },
+    {
       "route": "/*",
       "serve": "/index.html",
       "statusCode": 200,
