@@ -5,8 +5,7 @@
       "type": "httpTrigger",
       "direction": "in",
       "name": "req",
-      "methods": ["get", "post", "options"],
-      "route": "analyze"
+      "methods": ["get", "post", "options"]
     },
     {
       "type": "http",
