@@ -189,6 +189,7 @@ function RegionDetailPage() {
   }, [fetchData, sido, gugun]);
 
   // 클라이언트 페이징 처리 함수
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const updatePageData = useCallback(() => {
     if (allData.length === 0) return;
     
