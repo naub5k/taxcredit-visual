@@ -5,6 +5,9 @@ import PartnerModal from './PartnerModal';
 import performanceTracker from '../utils/performance';
 import dataCache from '../utils/dataCache';
 
+// 버전 확인용 로그
+console.log('🔄 RegionDetailPage.js 로드됨 - 버전: v2024.12.19.001 (캐시 수정됨)');
+
 function RegionDetailPage() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState([]);

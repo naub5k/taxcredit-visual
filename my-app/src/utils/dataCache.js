@@ -54,7 +54,24 @@ class DataCache {
 
   // 캐시 키 생성
   generateCacheKey(sido, gugun, page = 1, pageSize = 50) {
-    return `${sido}-${gugun}-p${page}-s${pageSize}`;
+    // 안전한 파라미터 검증
+    const safeSido = sido && typeof sido === 'string' ? sido : 'unknown';
+    const safeGugun = gugun && typeof gugun === 'string' ? gugun : 'unknown';
+    const safePage = page && typeof page === 'number' ? page : 1;
+    const safePageSize = pageSize && typeof pageSize === 'number' ? pageSize : 50;
+    
+    const cacheKey = `${safeSido}-${safeGugun}-p${safePage}-s${safePageSize}`;
+    
+    // 디버깅용 로그 (문제 상황 파악)
+    if (sido !== safeSido || gugun !== safeGugun || page !== safePage || pageSize !== safePageSize) {
+      console.warn('⚠️ 캐시 키 생성 시 잘못된 파라미터 감지:', {
+        원본: { sido, gugun, page, pageSize },
+        보정: { safeSido, safeGugun, safePage, safePageSize },
+        생성된키: cacheKey
+      });
+    }
+    
+    return cacheKey;
   }
 
   // 데이터 캐시에 저장
@@ -83,7 +100,9 @@ class DataCache {
         request.onerror = () => reject(request.error);
       });
 
-      console.log(`💾 캐시 저장: ${cacheKey}`);
+      // 안전한 로그 (데이터 크기만 표시)
+      const dataSize = Array.isArray(data) ? data.length : typeof data === 'object' ? 'object' : typeof data;
+      console.log(`💾 캐시 저장: ${cacheKey} (데이터: ${dataSize})`);
       return true;
     } catch (error) {
       console.error('캐시 저장 실패:', error);
