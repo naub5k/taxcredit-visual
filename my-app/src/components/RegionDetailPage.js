@@ -116,59 +116,104 @@ function RegionDetailPage() {
       
       console.log('=== API 응답 데이터 분석 ===');
       
-      // 응답 구조 검증 - 실제 API는 직접 배열을 반환
-      if (!Array.isArray(responseData)) {
-        console.error('예상하지 못한 응답 구조:', responseData);
-        throw new Error('API 응답이 배열이 아닙니다');
+      // 🔍 실제 데이터 구조 완전 분석 - 새로운 API 응답 구조 처리
+      let actualData = [];
+      let serverAggregates = null;
+      let serverPagination = null;
+      
+      if (responseData.data && Array.isArray(responseData.data)) {
+        // 새로운 API 응답 구조: { data: [...], pagination: {...}, aggregates: {...} }
+        actualData = responseData.data;
+        serverAggregates = responseData.aggregates;
+        serverPagination = responseData.pagination;
+        console.log('✅ 새로운 API 응답 구조 감지:', {
+          데이터건수: actualData.length,
+          서버집계: serverAggregates,
+          서버페이징: serverPagination
+        });
+      } else if (Array.isArray(responseData)) {
+        // 이전 API 응답 구조: 직접 배열
+        actualData = responseData;
+        console.log('✅ 이전 API 응답 구조 (직접 배열):', actualData.length, '건');
+      } else {
+        console.error('❌ 예상하지 못한 응답 구조:', responseData);
+        throw new Error('API 응답 구조를 인식할 수 없습니다');
       }
       
-      console.log(`📊 전체 데이터: ${responseData.length}건`);
+      console.log(`📊 처리된 데이터: ${actualData.length}건`);
+      
+      // 첫 번째 항목 구조 확인
+      if (actualData.length > 0) {
+        const firstItem = actualData[0];
+        console.log('🔍 === 실제 API 응답 첫 번째 항목 완전 분석 ===');
+        console.log('📋 전체 키 목록:', Object.keys(firstItem));
+        console.log('📋 사업자등록번호:', firstItem.사업자등록번호);
+        console.log('📋 업종명:', firstItem.업종명);
+        console.log('📋 사업장주소:', firstItem.사업장주소);
+      }
       
       // 전체 데이터 저장
-      setAllData(responseData);
+      setAllData(actualData);
       
-      // 전체 데이터 기준 집계 계산
-      const allEmployeeCounts = responseData.map(item => {
-        return Math.max(
-          item['2020'] || 0,
-          item['2021'] || 0,
-          item['2022'] || 0,
-          item['2023'] || 0,
-          item['2024'] || 0
-        );
-      }).filter(count => count > 0);
-      
-      const maxEmployeeCount = allEmployeeCounts.length > 0 
-        ? Math.max(...allEmployeeCounts) 
-        : 0;
-      const avgEmployeeCount = allEmployeeCounts.length > 0 
-        ? Math.round(allEmployeeCounts.reduce((sum, count) => sum + count, 0) / allEmployeeCounts.length) 
-        : 0;
-      const minEmployeeCount = allEmployeeCounts.length > 0 
-        ? Math.min(...allEmployeeCounts) 
-        : 0;
-      
-      // aggregates 상태 업데이트 (전체 데이터 기준)
-      const aggregatesData = {
-        maxEmployeeCount,
-        minEmployeeCount,
-        avgEmployeeCount,
-        totalCount: responseData.length
-      };
-      
-      console.log('🎯 계산된 aggregates 데이터 (전체 기준):', aggregatesData);
-      setAggregates(aggregatesData);
-      
-      // 페이지네이션 설정 (클라이언트 계산)
-      const totalPages = Math.ceil(responseData.length / 10);
-      setPagination({
-        page: 1, // 새 데이터 로드 시 1페이지로 리셋
-        pageSize: 10,
-        totalCount: responseData.length,
-        totalPages: totalPages,
-        hasNext: 1 < totalPages,
-        hasPrev: false
-      });
+      // 서버에서 계산된 집계값 사용 (있는 경우)
+      if (serverAggregates) {
+        console.log('🎯 서버 계산된 aggregates 사용:', serverAggregates);
+        setAggregates(serverAggregates);
+        
+        // 서버 페이징 정보 사용
+        if (serverPagination) {
+          setPagination({
+            page: 1,
+            pageSize: 10, // 클라이언트에서는 10개씩 표시
+            totalCount: serverPagination.totalCount,
+            totalPages: Math.ceil(serverPagination.totalCount / 10),
+            hasNext: 1 < Math.ceil(serverPagination.totalCount / 10),
+            hasPrev: false
+          });
+        }
+      } else {
+        // 클라이언트에서 집계값 계산 (기존 로직)
+        const allEmployeeCounts = actualData.map(item => {
+          return Math.max(
+            item['2020'] || 0,
+            item['2021'] || 0,
+            item['2022'] || 0,
+            item['2023'] || 0,
+            item['2024'] || 0
+          );
+        }).filter(count => count > 0);
+        
+        const maxEmployeeCount = allEmployeeCounts.length > 0 
+          ? Math.max(...allEmployeeCounts) 
+          : 0;
+        const avgEmployeeCount = allEmployeeCounts.length > 0 
+          ? Math.round(allEmployeeCounts.reduce((sum, count) => sum + count, 0) / allEmployeeCounts.length) 
+          : 0;
+        const minEmployeeCount = allEmployeeCounts.length > 0 
+          ? Math.min(...allEmployeeCounts) 
+          : 0;
+        
+        const aggregatesData = {
+          maxEmployeeCount,
+          minEmployeeCount,
+          avgEmployeeCount,
+          totalCount: actualData.length
+        };
+        
+        console.log('🎯 클라이언트 계산된 aggregates:', aggregatesData);
+        setAggregates(aggregatesData);
+        
+        // 클라이언트 페이징 설정
+        const totalPages = Math.ceil(actualData.length / 10);
+        setPagination({
+          page: 1,
+          pageSize: 10,
+          totalCount: actualData.length,
+          totalPages: totalPages,
+          hasNext: 1 < totalPages,
+          hasPrev: false
+        });
+      }
       
       setPerformanceMetrics({
         serverCalculated: false,
@@ -427,20 +472,7 @@ function RegionDetailPage() {
             {filteredData.length > 0 ? (
               <>
                 <div className="space-y-6">
-                  {filteredData.map((item, index) => {
-                    // 디버깅: 사업자등록번호 필드 확인
-                    console.log(`🔍 사업장 ${index + 1} 데이터 구조:`, {
-                      사업장명: item.사업장명,
-                      사업자등록번호: item.사업자등록번호,
-                      bizno: item.bizno,
-                      사업자번호: item.사업자번호,
-                      전체키: Object.keys(item)
-                    });
-                    
-                    // 사업자등록번호 필드 찾기
-                    const bizno = item.사업자등록번호 || item.bizno || item.사업자번호 || item.business_number;
-                    
-                    return (
+                  {filteredData.map((item, index) => (
                     <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
                       <div className="p-4 border-b">
                         <div className="flex justify-between items-start">
@@ -448,9 +480,9 @@ function RegionDetailPage() {
                             <h3 
                               className="text-lg font-bold text-gray-800 cursor-pointer hover:text-blue-600 transition-colors"
                               onClick={() => {
-                                console.log(`🔗 사업장명 클릭: ${item.사업장명}, bizno: ${bizno}`);
-                                if (bizno) {
-                                  navigate(`/company/${bizno}`);
+                                console.log(`🔗 사업장명 클릭: ${item.사업장명}, bizno: ${item.사업자등록번호}`);
+                                if (item.사업자등록번호) {
+                                  navigate(`/company/${item.사업자등록번호}`);
                                 } else {
                                   console.error('❌ 사업자등록번호를 찾을 수 없습니다:', item);
                                   alert('사업자등록번호를 찾을 수 없습니다.');
@@ -461,18 +493,18 @@ function RegionDetailPage() {
                             </h3>
                             <div className="text-sm text-gray-500 mt-1 flex flex-wrap gap-2">
                               {item.업종명 && <span>{item.업종명}</span>}
-                              {bizno && (
+                              {item.사업자등록번호 && (
                                 <span className="bg-gray-100 px-2 py-0.5 rounded font-mono">
-                                  {formatBusinessNumber(bizno)}
+                                  {formatBusinessNumber(item.사업자등록번호)}
                                 </span>
                               )}
                             </div>
                           </div>
                           <button
                             onClick={() => {
-                              console.log(`🔗 상세보기 클릭: ${item.사업장명}, bizno: ${bizno}`);
-                              if (bizno) {
-                                navigate(`/company/${bizno}`);
+                              console.log(`🔗 상세보기 클릭: ${item.사업장명}, bizno: ${item.사업자등록번호}`);
+                              if (item.사업자등록번호) {
+                                navigate(`/company/${item.사업자등록번호}`);
                               } else {
                                 console.error('❌ 사업자등록번호를 찾을 수 없습니다:', item);
                                 alert('사업자등록번호를 찾을 수 없습니다.');
@@ -505,8 +537,7 @@ function RegionDetailPage() {
                         </div>
                       </div>
                     </div>
-                    );
-                  })}
+                  ))}
                 </div>
                 
                 {/* 페이지네이션 */}
