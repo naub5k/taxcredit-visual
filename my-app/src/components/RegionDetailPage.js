@@ -427,28 +427,57 @@ function RegionDetailPage() {
             {filteredData.length > 0 ? (
               <>
                 <div className="space-y-6">
-                  {filteredData.map((item, index) => (
+                  {filteredData.map((item, index) => {
+                    // 디버깅: 사업자등록번호 필드 확인
+                    console.log(`🔍 사업장 ${index + 1} 데이터 구조:`, {
+                      사업장명: item.사업장명,
+                      사업자등록번호: item.사업자등록번호,
+                      bizno: item.bizno,
+                      사업자번호: item.사업자번호,
+                      전체키: Object.keys(item)
+                    });
+                    
+                    // 사업자등록번호 필드 찾기
+                    const bizno = item.사업자등록번호 || item.bizno || item.사업자번호 || item.business_number;
+                    
+                    return (
                     <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
                       <div className="p-4 border-b">
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
                             <h3 
                               className="text-lg font-bold text-gray-800 cursor-pointer hover:text-blue-600 transition-colors"
-                              onClick={() => navigate(`/company/${item.사업자등록번호}`)}
+                              onClick={() => {
+                                console.log(`🔗 사업장명 클릭: ${item.사업장명}, bizno: ${bizno}`);
+                                if (bizno) {
+                                  navigate(`/company/${bizno}`);
+                                } else {
+                                  console.error('❌ 사업자등록번호를 찾을 수 없습니다:', item);
+                                  alert('사업자등록번호를 찾을 수 없습니다.');
+                                }
+                              }}
                             >
                               {item.사업장명}
                             </h3>
                             <div className="text-sm text-gray-500 mt-1 flex flex-wrap gap-2">
                               {item.업종명 && <span>{item.업종명}</span>}
-                              {item.사업자등록번호 && (
+                              {bizno && (
                                 <span className="bg-gray-100 px-2 py-0.5 rounded font-mono">
-                                  {formatBusinessNumber(item.사업자등록번호)}
+                                  {formatBusinessNumber(bizno)}
                                 </span>
                               )}
                             </div>
                           </div>
                           <button
-                            onClick={() => navigate(`/company/${item.사업자등록번호}`)}
+                            onClick={() => {
+                              console.log(`🔗 상세보기 클릭: ${item.사업장명}, bizno: ${bizno}`);
+                              if (bizno) {
+                                navigate(`/company/${bizno}`);
+                              } else {
+                                console.error('❌ 사업자등록번호를 찾을 수 없습니다:', item);
+                                alert('사업자등록번호를 찾을 수 없습니다.');
+                              }
+                            }}
                             className="ml-4 px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors flex items-center"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -476,7 +505,8 @@ function RegionDetailPage() {
                         </div>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
                 
                 {/* 페이지네이션 */}

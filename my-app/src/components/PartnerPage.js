@@ -49,7 +49,7 @@ function PartnerPage() {
 
     setLoading(true);
     try {
-      console.log('파트너 검색 실행:', { searchTerm, filters });
+      console.log('🔍 파트너 검색 실행:', { searchTerm, filters });
       
       // API URL 결정
       const baseUrl = window.location.hostname.includes("localhost")
@@ -58,6 +58,8 @@ function PartnerPage() {
       
       // 검색 API 호출 (사업장명 또는 사업자등록번호)
       const apiUrl = `${baseUrl}/api/getSampleList?search=${encodeURIComponent(searchTerm.trim())}&page=1&pageSize=20`;
+      
+      console.log('📡 API 호출:', apiUrl);
       
       const response = await fetch(apiUrl, {
         method: 'GET',
@@ -72,15 +74,37 @@ function PartnerPage() {
       }
       
       const responseData = await response.json();
-      console.log('검색 결과:', responseData);
+      console.log('✅ 검색 결과 원본:', responseData);
       
-      // 검색 결과 설정
-      const resultData = responseData.data || [];
+      // API 응답 구조 처리 - 직접 배열이거나 data 속성에 배열
+      let resultData = [];
+      if (Array.isArray(responseData)) {
+        resultData = responseData;
+        console.log('📊 직접 배열 응답:', resultData.length, '건');
+      } else if (responseData.data && Array.isArray(responseData.data)) {
+        resultData = responseData.data;
+        console.log('📊 data 속성 배열 응답:', resultData.length, '건');
+      } else {
+        console.warn('⚠️ 예상하지 못한 응답 구조:', responseData);
+        resultData = [];
+      }
+      
+      // 첫 번째 항목의 구조 확인
+      if (resultData.length > 0) {
+        console.log('🔍 첫 번째 검색 결과 구조:', {
+          사업장명: resultData[0].사업장명,
+          사업자등록번호: resultData[0].사업자등록번호,
+          bizno: resultData[0].bizno,
+          사업자번호: resultData[0].사업자번호,
+          전체키: Object.keys(resultData[0])
+        });
+      }
+      
       setData(resultData);
       setSearchResultCount(resultData.length);
       
     } catch (error) {
-      console.error('검색 오류:', error);
+      console.error('❌ 검색 오류:', error);
       alert('검색 중 오류가 발생했습니다: ' + error.message);
       setData([]);
       setSearchResultCount(0);
@@ -169,25 +193,45 @@ function PartnerPage() {
             </div>
           ) : data.length > 0 ? (
             <div className="space-y-4">
-              {data.map((item, index) => (
+              {data.map((item, index) => {
+                // 사업자등록번호 필드 찾기
+                const bizno = item.사업자등록번호 || item.bizno || item.사업자번호 || item.business_number;
+                
+                return (
                 <div key={index} className="border border-purple-200 rounded-lg p-4 hover:bg-purple-50 transition-colors">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <h4 
                         className="font-semibold text-gray-800 cursor-pointer hover:text-purple-600 transition-colors"
-                        onClick={() => navigate(`/company/${item.사업자등록번호}`)}
+                        onClick={() => {
+                          console.log(`🔗 파트너 검색 결과 클릭: ${item.사업장명}, bizno: ${bizno}`);
+                          if (bizno) {
+                            navigate(`/company/${bizno}`);
+                          } else {
+                            console.error('❌ 사업자등록번호를 찾을 수 없습니다:', item);
+                            alert('사업자등록번호를 찾을 수 없습니다.');
+                          }
+                        }}
                       >
                         {item.사업장명}
                       </h4>
                       <div className="text-sm text-gray-500 mt-1 space-y-1">
-                        <div>사업자등록번호: <span className="font-mono">{formatBusinessNumber(item.사업자등록번호)}</span></div>
+                        <div>사업자등록번호: <span className="font-mono">{bizno ? formatBusinessNumber(bizno) : '정보 없음'}</span></div>
                         <div>업종: {item.업종명}</div>
                         <div>주소: {item.사업장주소}</div>
                         <div>최근 고용인원: <span className="font-semibold text-purple-600">{item['2024'] || 0}명</span></div>
                       </div>
                     </div>
                     <button 
-                      onClick={() => navigate(`/company/${item.사업자등록번호}`)}
+                      onClick={() => {
+                        console.log(`🔗 파트너 상세보기 클릭: ${item.사업장명}, bizno: ${bizno}`);
+                        if (bizno) {
+                          navigate(`/company/${bizno}`);
+                        } else {
+                          console.error('❌ 사업자등록번호를 찾을 수 없습니다:', item);
+                          alert('사업자등록번호를 찾을 수 없습니다.');
+                        }
+                      }}
                       className="ml-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -197,7 +241,8 @@ function PartnerPage() {
                     </button>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-12">
