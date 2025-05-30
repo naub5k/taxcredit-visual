@@ -3,7 +3,7 @@
  */
 
 // Azure Functions 엔드포인트
-const AI_FUNCTION_ENDPOINT = 'https://taxcredit-ai-func-v2.azurewebsites.net/api/aimodelquery';
+const AI_FUNCTION_ENDPOINT = 'https://taxcredit-api-func-v2.azurewebsites.net/api/aimodelquery';
 
 /**
  * AI 모델에 질의하는 함수

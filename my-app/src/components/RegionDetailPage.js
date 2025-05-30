@@ -48,7 +48,7 @@ function RegionDetailPage() {
     // API URL 결정 로직 - 환경에 따른 분기 처리
     const baseUrl = window.location.hostname.includes("localhost")
       ? "http://localhost:7071"
-      : "https://taxcredit-ai-func-v2.azurewebsites.net";
+      : "https://taxcredit-api-func-v2.azurewebsites.net";
     
     // 새로운 API 호출 (페이지네이션 및 집계값 포함)
     const apiUrl = `${baseUrl}/api/getSampleList?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}&page=${page}&pageSize=${pageSize}`;

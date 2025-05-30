@@ -54,7 +54,7 @@ function PartnerPage() {
       // API URL 결정
       const baseUrl = window.location.hostname.includes("localhost")
         ? "http://localhost:7071"
-        : "https://taxcredit-ai-func-v2.azurewebsites.net";
+        : "https://taxcredit-api-func-v2.azurewebsites.net";
       
       // 검색 API 호출 (사업장명 또는 사업자등록번호)
       const apiUrl = `${baseUrl}/api/getSampleList?search=${encodeURIComponent(searchTerm.trim())}&page=1&pageSize=20`;

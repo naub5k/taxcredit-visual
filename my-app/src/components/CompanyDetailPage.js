@@ -23,7 +23,7 @@ function CompanyDetailPage() {
       // API URL 결정 로직
       const baseUrl = window.location.hostname.includes("localhost")
         ? "http://localhost:7071"
-        : "https://taxcredit-ai-func-v2.azurewebsites.net";
+        : "https://taxcredit-api-func-v2.azurewebsites.net";
       
       const apiUrl = `${baseUrl}/api/getSampleList?bizno=${encodeURIComponent(businessNumber)}`;
       
