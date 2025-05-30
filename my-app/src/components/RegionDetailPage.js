@@ -186,10 +186,9 @@ function RegionDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [fetchData, sido, gugun]);
+  }, [fetchData]);
 
   // 클라이언트 페이징 처리 함수
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const updatePageData = useCallback(() => {
     if (allData.length === 0) return;
     
@@ -212,12 +211,9 @@ function RegionDetailPage() {
       hasPrev: currentPage > 1
     }));
     
-    // 필터링 검증 (현재 페이지 데이터만)
-    if (sido && gugun && pageData.length > 0) {
-      const matchingItems = pageData.filter(item => item.구군 === gugun);
-      console.log(`- 구군(${gugun}) 일치 항목: ${matchingItems.length}/${pageData.length}건`);
-    }
-  }, [allData, currentPage, sido, gugun]);
+    // 필터링 검증 (로그는 다른 곳에서 처리)
+    console.log(`- 현재 페이지 데이터: ${pageData.length}건`);
+  }, [allData, currentPage]);
 
   // 전체 데이터 로딩 (sido, gugun 변경 시)
   useEffect(() => {
