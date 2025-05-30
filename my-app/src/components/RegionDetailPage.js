@@ -133,16 +133,27 @@ function RegionDetailPage() {
       }
       
       console.log('응답 구조:', Object.keys(responseData));
-      console.log(`데이터 배열 길이: ${responseData.data?.length || 0}`);
-      console.log('집계값 전체:', responseData.aggregates);
-      console.log('🔍 totalCount 값:', responseData.aggregates?.totalCount);
-      console.log('🔍 totalCount 타입:', typeof responseData.aggregates?.totalCount);
-      console.log('페이지네이션:', responseData.pagination);
-      console.log('메타 정보:', responseData.meta);
+      
+      // API-FUNC 응답 구조 처리: 배열이 직접 오거나 data 속성에 배열이 있음
+      let dataArray = [];
+      if (Array.isArray(responseData)) {
+        // 응답이 직접 배열인 경우
+        dataArray = responseData;
+        console.log(`📊 직접 배열 응답: ${dataArray.length}건`);
+      } else if (responseData.data && Array.isArray(responseData.data)) {
+        // data 속성에 배열이 있는 경우
+        dataArray = responseData.data;
+        console.log(`📊 data 속성 배열 응답: ${dataArray.length}건`);
+      } else {
+        console.warn('⚠️ 예상하지 못한 응답 구조:', responseData);
+        dataArray = [];
+      }
+      
+      console.log(`데이터 배열 길이: ${dataArray.length}`);
       
       // 데이터 샘플 확인 (첫 번째 항목)
-      if (responseData.data && responseData.data.length > 0) {
-        console.log('첫 번째 데이터 샘플:', responseData.data[0]);
+      if (dataArray.length > 0) {
+        console.log('첫 번째 데이터 샘플:', dataArray[0]);
       }
       
       // 오류 응답 확인
@@ -152,43 +163,67 @@ function RegionDetailPage() {
       }
       
       // 안전한 상태 업데이트 (기본값 보장)
-      setData(responseData.data || []);
+      setData(dataArray);
       
-      // aggregates 상태 업데이트 전 로깅
-      const aggregatesData = responseData.aggregates || {
-        maxEmployeeCount: 0,
-        minEmployeeCount: 0,
-        avgEmployeeCount: 0,
-        totalCount: 0
+      // API-FUNC 기준: 클라이언트에서 집계 계산
+      const totalCount = dataArray.length;
+      const employeeCounts = dataArray.map(item => {
+        // 연도별 고용인원 중 최대값 찾기
+        return Math.max(
+          item['2020'] || 0,
+          item['2021'] || 0,
+          item['2022'] || 0,
+          item['2023'] || 0,
+          item['2024'] || 0
+        );
+      }).filter(count => count > 0);
+      
+      const maxEmployeeCount = employeeCounts.length > 0 ? Math.max(...employeeCounts) : 0;
+      const avgEmployeeCount = employeeCounts.length > 0 
+        ? Math.round(employeeCounts.reduce((sum, count) => sum + count, 0) / employeeCounts.length) 
+        : 0;
+      const minEmployeeCount = employeeCounts.length > 0 ? Math.min(...employeeCounts) : 0;
+      
+      // aggregates 상태 업데이트
+      const aggregatesData = {
+        maxEmployeeCount,
+        minEmployeeCount,
+        avgEmployeeCount,
+        totalCount
       };
-      console.log('🎯 설정할 aggregates 데이터:', aggregatesData);
+      
+      console.log('🎯 계산된 aggregates 데이터:', aggregatesData);
       console.log('🎯 totalCount 최종값:', aggregatesData.totalCount);
       
       setAggregates(aggregatesData);
-              setPagination(responseData.pagination || {
-          page: 1,
-          pageSize: 10,
-          totalCount: 0,
-          totalPages: 0,
-          hasNext: false,
-          hasPrev: false
-        });
+      
+      // API-FUNC 기준: 클라이언트에서 페이지네이션 계산
+      const totalPages = Math.ceil(totalCount / pageSize);
+      setPagination({
+        page: page,
+        pageSize: pageSize,
+        totalCount: totalCount,
+        totalPages: totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1
+      });
+      
       setPerformanceMetrics({
-        serverCalculated: responseData.meta?.performance?.serverCalculated || false,
-        requestedAt: responseData.meta?.requestedAt || new Date().toISOString(),
+        serverCalculated: false, // 클라이언트에서 계산
+        requestedAt: new Date().toISOString(),
         fromCache: responseData.meta?.fromCache || false,
         duration: responseData.meta?.performance?.duration || 0
       });
       
       // 필터링 검증은 유지 (디버깅용)
-      if (sido && gugun && responseData.data?.length > 0) {
-        const matchingItems = responseData.data.filter(item => item.구군 === gugun);
+      if (sido && gugun && dataArray.length > 0) {
+        const matchingItems = dataArray.filter(item => item.구군 === gugun);
         console.log(`- 구군(${gugun}) 일치 항목: ${matchingItems.length}건`);
         
         // 구군 불일치 항목이 있다면 로그
-        if (matchingItems.length !== responseData.data.length) {
+        if (matchingItems.length !== dataArray.length) {
           console.warn('⚠️ 구군 불일치 데이터 발견!');
-          const mismatchedItems = responseData.data.filter(item => item.구군 !== gugun);
+          const mismatchedItems = dataArray.filter(item => item.구군 !== gugun);
           console.log('불일치 항목들:', mismatchedItems.slice(0, 3));
         }
       }
