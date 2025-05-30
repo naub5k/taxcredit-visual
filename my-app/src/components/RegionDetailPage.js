@@ -120,145 +120,96 @@ function RegionDetailPage() {
     }
   }, [sido, gugun, fetchFromAPI]);
 
+  // 데이터 로딩 및 상태 업데이트
+  const loadAndSetData = useCallback(async (page = 1, pageSize = 10) => {
+    try {
+      const responseData = await fetchData(page, pageSize);
+      
+      console.log('=== API 응답 데이터 분석 ===');
+      
+      // 응답 구조 검증
+      if (!responseData || typeof responseData !== 'object') {
+        throw new Error('Invalid API response structure');
+      }
+      
+      console.log('응답 구조:', Object.keys(responseData));
+      console.log(`데이터 배열 길이: ${responseData.data?.length || 0}`);
+      console.log('집계값 전체:', responseData.aggregates);
+      console.log('🔍 totalCount 값:', responseData.aggregates?.totalCount);
+      console.log('🔍 totalCount 타입:', typeof responseData.aggregates?.totalCount);
+      console.log('페이지네이션:', responseData.pagination);
+      console.log('메타 정보:', responseData.meta);
+      
+      // 데이터 샘플 확인 (첫 번째 항목)
+      if (responseData.data && responseData.data.length > 0) {
+        console.log('첫 번째 데이터 샘플:', responseData.data[0]);
+      }
+      
+      // 오류 응답 확인
+      if (responseData.error) {
+        console.warn('⚠️ API 오류 응답:', responseData.error);
+        throw new Error(responseData.error.message || 'API 오류 발생');
+      }
+      
+      // 안전한 상태 업데이트 (기본값 보장)
+      setData(responseData.data || []);
+      
+      // aggregates 상태 업데이트 전 로깅
+      const aggregatesData = responseData.aggregates || {
+        maxEmployeeCount: 0,
+        minEmployeeCount: 0,
+        avgEmployeeCount: 0,
+        totalCount: 0
+      };
+      console.log('🎯 설정할 aggregates 데이터:', aggregatesData);
+      console.log('🎯 totalCount 최종값:', aggregatesData.totalCount);
+      
+      setAggregates(aggregatesData);
+              setPagination(responseData.pagination || {
+          page: 1,
+          pageSize: 10,
+          totalCount: 0,
+          totalPages: 0,
+          hasNext: false,
+          hasPrev: false
+        });
+      setPerformanceMetrics({
+        serverCalculated: responseData.meta?.performance?.serverCalculated || false,
+        requestedAt: responseData.meta?.requestedAt || new Date().toISOString(),
+        fromCache: responseData.meta?.fromCache || false,
+        duration: responseData.meta?.performance?.duration || 0
+      });
+      
+      // 필터링 검증은 유지 (디버깅용)
+      if (sido && gugun && responseData.data?.length > 0) {
+        const matchingItems = responseData.data.filter(item => item.구군 === gugun);
+        console.log(`- 구군(${gugun}) 일치 항목: ${matchingItems.length}건`);
+        
+        // 구군 불일치 항목이 있다면 로그
+        if (matchingItems.length !== responseData.data.length) {
+          console.warn('⚠️ 구군 불일치 데이터 발견!');
+          const mismatchedItems = responseData.data.filter(item => item.구군 !== gugun);
+          console.log('불일치 항목들:', mismatchedItems.slice(0, 3));
+        }
+      }
+      
+    } catch (error) {
+      console.error("데이터 로딩 오류:", error);
+      setError(`데이터를 불러오는 중 오류가 발생했습니다: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchData, sido, gugun]);
+  
   useEffect(() => {
-    if (!sido) {
+    if (sido) {
+      setLoading(true);
+      loadAndSetData(currentPage);
+    } else {
       setError("시도 정보가 없습니다. 이전 페이지로 돌아가 지역을 선택해주세요.");
       setLoading(false);
-      return;
     }
-
-    // 데이터 로딩 및 상태 업데이트 함수를 useEffect 내부로 이동
-    const loadAndSetData = async (page = 1, pageSize = 10) => {
-      try {
-        setLoading(true);
-        const responseData = await fetchData(page, pageSize);
-        
-        console.log('=== API 응답 데이터 분석 ===');
-        
-        // 응답 구조 검증
-        if (!responseData) {
-          throw new Error('No response data');
-        }
-        
-        console.log('응답 구조:', Object.keys(responseData));
-        
-        // API-FUNC 응답 구조 처리: 전체 데이터를 받아서 클라이언트 페이징
-        let fullDataArray = [];
-        
-        if (Array.isArray(responseData)) {
-          // 응답이 직접 배열인 경우 (전체 데이터)
-          fullDataArray = responseData;
-          console.log(`📊 전체 배열 응답: ${fullDataArray.length}건`);
-        } else if (responseData.data && Array.isArray(responseData.data)) {
-          // data 속성에 배열이 있는 경우
-          fullDataArray = responseData.data;
-          console.log(`📊 구조화된 응답: ${fullDataArray.length}건`);
-        } else {
-          console.warn('⚠️ 예상하지 못한 응답 구조:', responseData);
-          fullDataArray = [];
-        }
-        
-        // 클라이언트 페이징 처리
-        const totalCount = fullDataArray.length;
-        const startIndex = (page - 1) * pageSize;
-        const endIndex = startIndex + pageSize;
-        const pageData = fullDataArray.slice(startIndex, endIndex);
-        
-        console.log(`🔄 클라이언트 페이징: ${startIndex}-${endIndex} (총 ${totalCount}건 중 ${pageData.length}건 표시)`);
-        
-        // 데이터 샘플 확인 (첫 번째 항목만)
-        if (pageData.length > 0) {
-          console.log('현재 페이지 첫 번째 데이터:', pageData[0]);
-        }
-        
-        // 오류 응답 확인
-        if (responseData.error) {
-          console.warn('⚠️ API 오류 응답:', responseData.error);
-          throw new Error(responseData.error.message || 'API 오류 발생');
-        }
-        
-        // 현재 페이지 데이터만 상태 업데이트
-        setData(pageData);
-        
-        // 성능 최적화: 현재 페이지 데이터만으로 집계 계산
-        const currentPageEmployeeCounts = pageData.map(item => {
-          return Math.max(
-            item['2020'] || 0,
-            item['2021'] || 0,
-            item['2022'] || 0,
-            item['2023'] || 0,
-            item['2024'] || 0
-          );
-        }).filter(count => count > 0);
-        
-        // 전체 데이터 기준 집계 계산 (한 번만)
-        const allEmployeeCounts = fullDataArray.map(item => {
-          return Math.max(
-            item['2020'] || 0,
-            item['2021'] || 0,
-            item['2022'] || 0,
-            item['2023'] || 0,
-            item['2024'] || 0
-          );
-        }).filter(count => count > 0);
-        
-        const maxEmployeeCount = allEmployeeCounts.length > 0 
-          ? Math.max(...allEmployeeCounts) 
-          : 0;
-        const avgEmployeeCount = allEmployeeCounts.length > 0 
-          ? Math.round(allEmployeeCounts.reduce((sum, count) => sum + count, 0) / allEmployeeCounts.length) 
-          : 0;
-        const minEmployeeCount = allEmployeeCounts.length > 0 
-          ? Math.min(...allEmployeeCounts) 
-          : 0;
-        
-        // aggregates 상태 업데이트 (전체 데이터 기준)
-        const aggregatesData = {
-          maxEmployeeCount,
-          minEmployeeCount,
-          avgEmployeeCount,
-          totalCount
-        };
-        
-        console.log('🎯 계산된 aggregates 데이터 (전체 기준):', aggregatesData);
-        
-        setAggregates(aggregatesData);
-        
-        // 페이지네이션 설정 (클라이언트 계산)
-        const totalPages = Math.ceil(totalCount / pageSize);
-        setPagination({
-          page: page,
-          pageSize: pageSize,
-          totalCount: totalCount,
-          totalPages: totalPages,
-          hasNext: page < totalPages,
-          hasPrev: page > 1
-        });
-        
-        setPerformanceMetrics({
-          serverCalculated: false,
-          requestedAt: new Date().toISOString(),
-          fromCache: responseData.meta?.fromCache || false,
-          duration: responseData.meta?.performance?.duration || 0,
-          clientPaginated: true // 클라이언트 페이징 표시
-        });
-        
-        // 필터링 검증 (현재 페이지 데이터만)
-        if (sido && gugun && pageData.length > 0) {
-          const matchingItems = pageData.filter(item => item.구군 === gugun);
-          console.log(`- 구군(${gugun}) 일치 항목: ${matchingItems.length}/${pageData.length}건`);
-        }
-        
-      } catch (error) {
-        console.error("데이터 로딩 오류:", error);
-        setError(`데이터를 불러오는 중 오류가 발생했습니다: ${error.message}`);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadAndSetData(currentPage);
-  }, [sido, gugun, currentPage, fetchData]);
+  }, [sido, gugun, currentPage, loadAndSetData]);
 
   const handleBack = () => {
     // 강제로 홈페이지로 이동
