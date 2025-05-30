@@ -81,9 +81,8 @@ function RegionDetailPage() {
     try {
       console.log(`데이터 로딩 시작: sido=${sido}, gugun=${gugun}`);
       
-      // 1. 캐시에서 먼저 확인 (페이지 단위가 아닌 전체 데이터)
-      const cacheKey = `${sido}-${gugun}`;
-      const cachedData = await dataCache.get(cacheKey);
+      // 1. 캐시에서 먼저 확인 (전체 데이터용 특별 페이지 사이즈)
+      const cachedData = await dataCache.get(sido, gugun, 1, 9999);
       if (cachedData) {
         console.log('📬 캐시에서 전체 데이터 로드됨');
         return cachedData;
@@ -93,9 +92,9 @@ function RegionDetailPage() {
       console.log('📡 API에서 전체 데이터 로드 중...');
       const responseData = await fetchFromAPI();
       
-      // 3. 응답 데이터를 캐시에 저장
+      // 3. 응답 데이터를 캐시에 저장 (전체 데이터용 특별 페이지 사이즈)
       if (responseData && Array.isArray(responseData)) {
-        await dataCache.set(cacheKey, responseData);
+        await dataCache.set(sido, gugun, 1, 9999, responseData);
       }
       
       return responseData;

@@ -20,12 +20,19 @@ function CompanyDetailPage() {
   // API 호출 함수
   const fetchCompanyDetail = async (businessNumber) => {
     try {
+      // 사업자등록번호 유효성 검사
+      if (!businessNumber || businessNumber === 'undefined' || businessNumber.trim() === '') {
+        throw new Error('유효하지 않은 사업자등록번호입니다.');
+      }
+      
       // API URL 결정 로직
       const baseUrl = window.location.hostname.includes("localhost")
         ? "http://localhost:7071"
         : "https://taxcredit-api-func-v2.azurewebsites.net";
       
       const apiUrl = `${baseUrl}/api/getSampleList?bizno=${encodeURIComponent(businessNumber)}`;
+      
+      console.log(`🔍 회사 상세 정보 조회: ${businessNumber}`);
       
       return await performanceTracker.measureAPI(
         `getCompanyDetail-${businessNumber}`,
@@ -44,8 +51,10 @@ function CompanyDetailPage() {
           
           const data = await response.json();
           
-          // 단일 회사 데이터 반환 (배열의 첫 번째 항목)
-          if (data.data && data.data.length > 0) {
+          // API 응답이 배열일 경우 첫 번째 항목 반환
+          if (Array.isArray(data) && data.length > 0) {
+            return data[0];
+          } else if (data.data && Array.isArray(data.data) && data.data.length > 0) {
             return data.data[0];
           } else {
             throw new Error('회사 정보를 찾을 수 없습니다.');
@@ -60,24 +69,30 @@ function CompanyDetailPage() {
 
   // 데이터 로딩
   useEffect(() => {
-    if (bizno) {
-      setLoading(true);
-      fetchCompanyDetail(bizno)
-        .then(data => {
-          setCompanyData(data);
-          setError(null);
-        })
-        .catch(err => {
-          setError(err.message);
-          setCompanyData(null);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    } else {
-      setError("사업자등록번호가 없습니다.");
+    // 사업자등록번호 유효성 검사
+    if (!bizno || bizno === 'undefined' || bizno.trim() === '') {
+      setError("유효하지 않은 사업자등록번호입니다.");
       setLoading(false);
+      return;
     }
+    
+    console.log(`📋 CompanyDetailPage 로딩 시작: bizno=${bizno}`);
+    
+    setLoading(true);
+    fetchCompanyDetail(bizno)
+      .then(data => {
+        console.log('✅ 회사 데이터 로드 성공:', data);
+        setCompanyData(data);
+        setError(null);
+      })
+      .catch(err => {
+        console.error('❌ 회사 데이터 로드 실패:', err);
+        setError(err.message);
+        setCompanyData(null);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, [bizno]);
 
   const handleBack = () => {
