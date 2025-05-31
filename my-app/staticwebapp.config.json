@@ -3,14 +3,14 @@
     {
       "route": "/api/getSampleList",
       "allowedRoles": ["anonymous"],
-      "serve": "https://taxcredit-ai-func-v2.azurewebsites.net/api/getSampleList",
+      "serve": "https://taxcredit-api-func-v2.azurewebsites.net/api/getSampleList",
       "methods": ["GET", "OPTIONS"],
       "priority": 100
     },
     {
       "route": "/api/analyze/*",
       "allowedRoles": ["anonymous"],
-      "serve": "https://taxcredit-ai-func-v2.azurewebsites.net/api/analyze/{*restOfPath}",
+      "serve": "https://taxcredit-ai-func-v3.azurewebsites.net/api/analyze/{*restOfPath}",
       "methods": ["GET", "POST", "OPTIONS"],
       "priority": 90
     },
@@ -36,7 +36,7 @@
     }
   },
   "globalHeaders": {
-    "Content-Security-Policy": "default-src 'self' https://taxcredit-ai-func-v2.azurewebsites.net; connect-src 'self' https://taxcredit-ai-func-v2.azurewebsites.net data: blob: *; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:;",
+    "Content-Security-Policy": "default-src 'self' https://taxcredit-api-func-v2.azurewebsites.net https://taxcredit-ai-func-v3.azurewebsites.net; connect-src 'self' https://taxcredit-api-func-v2.azurewebsites.net https://taxcredit-ai-func-v3.azurewebsites.net data: blob: *; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:;",
     "X-Content-Type-Options": "nosniff"
   },
   "mimeTypes": {
