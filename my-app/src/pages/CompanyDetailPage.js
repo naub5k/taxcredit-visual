@@ -18,9 +18,8 @@ function CompanyDetailPage() {
       if (!bizno || bizno === 'undefined' || bizno.trim() === '') return;
 
       try {
-        const baseUrl = window.location.hostname.includes("localhost")
-          ? "http://localhost:7071"
-          : "https://taxcredit-api-func-v2.azurewebsites.net";
+        // 실 배포 API만 사용 (로컬 테스트 제거)
+        const baseUrl = "https://taxcredit-api-func-v2.azurewebsites.net";
         
         const response = await fetch(`${baseUrl}/api/getSampleList?bizno=${encodeURIComponent(bizno)}`);
         if (!response.ok) throw new Error('회사 정보 로딩 실패');
@@ -28,10 +27,10 @@ function CompanyDetailPage() {
         const data = await response.json();
         const companyData = Array.isArray(data) ? data[0] : (data.data?.[0] || null);
         
-        console.log("✅ 회사 데이터 로드 성공:", companyData);
+        console.log("✅ 실 API에서 회사 데이터 로드 성공:", companyData);
         setCompanyInfo(companyData);
       } catch (err) {
-        console.error("❌ 회사 데이터 로드 실패:", err);
+        console.error("❌ 실 API 회사 데이터 로드 실패:", err);
       } finally {
         setLoading(false);
       }
@@ -131,7 +130,7 @@ function CompanyDetailPage() {
           {analysisData ? (
             <>
               <CompanyAIInfo companyProfile={analysisData?.companyProfile} />
-              <CompanyInsightCard companyInsight={analysisData?.companyInsight} />
+              <CompanyInsightCard companyInsight={analysisData?.aiInsight} />
               <TaxCreditAnalysisBlock taxCreditAnalysis={analysisData?.taxCreditAnalysis} />
             </>
           ) : (
