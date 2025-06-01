@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { CompanyDataBars } from '../components/RegionDetailComponents';
+import { useParams } from 'react-router-dom';
 import CompanyDescriptionBlock from '../components/CompanyDescriptionBlock';
-import performanceTracker from '../utils/performance';
 import { fetchCompanyAnalysis } from '../services/aiV3Service';
 import CompanyAIInfo from '../components/CompanyAIInfo';
 import CompanyInsightCard from '../components/CompanyInsightCard';
@@ -10,11 +8,7 @@ import TaxCreditAnalysisBlock from '../components/TaxCreditAnalysisBlock';
 
 function CompanyDetailPage() {
   const { bizno } = useParams();
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [companyData, setCompanyData] = useState(null);
   const [analysisData, setAnalysisData] = useState(null);
-  const [error, setError] = useState(null);
 
   // AI 분석 데이터 로딩
   useEffect(() => {
@@ -27,7 +21,6 @@ function CompanyDetailPage() {
         setAnalysisData(data);
       } catch (err) {
         console.error('AI 분석 데이터 로딩 실패:', err);
-        // AI 데이터 로딩 실패는 전체 페이지 에러로 처리하지 않음
       }
     };
 
@@ -36,17 +29,16 @@ function CompanyDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* 기존 헤더 유지 */}
-      // ... existing code ...
+      {/* 헤더 영역 */}
+      <header className="bg-blue-700 text-white p-4 shadow-md">
+        <div className="container mx-auto">
+          <h1 className="text-xl font-bold">회사 상세 정보</h1>
+          <p className="text-sm opacity-80">사업자등록번호: {bizno}</p>
+        </div>
+      </header>
 
       {/* 메인 컨텐츠 */}
       <main className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        {/* 회사 기본 정보 */}
-        // ... existing code ...
-
-        {/* 연도별 고용인원 추이 */}
-        // ... existing code ...
-
         {/* 기업 설명 블럭 */}
         <CompanyDescriptionBlock bizno={bizno} className="mb-6" />
 
