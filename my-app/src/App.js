@@ -4,7 +4,7 @@ import RegionSelector from './components/RegionSelector';
 import RegionChart from './components/RegionChart';
 import MobileRegionDetail from './components/MobileRegionDetail';
 import RegionDetailPage from './components/RegionDetailPage';
-import CompanyDetailPage from './components/CompanyDetailPage';
+import CompanyDetailPage from './pages/CompanyDetailPage';
 import PartnerPage from './components/PartnerPage';
 import { RegionSummaryBox, PartnerServiceLink } from './components/RegionDetailComponents';
 import PartnerModal from './components/PartnerModal';
