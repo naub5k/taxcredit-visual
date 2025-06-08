@@ -40,8 +40,10 @@ export const buildApiUrl = (endpoint, params = {}) => {
   return url.toString();
 };
 
-export default {
+const apiConfigModule = {
   API_CONFIG,
   getApiBaseUrl,
   buildApiUrl
-}; 
+};
+
+export default apiConfigModule; 
