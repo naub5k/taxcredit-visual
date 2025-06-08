@@ -4,9 +4,10 @@ import { CompanyDataBars } from './RegionDetailComponents';
 import PartnerModal from './PartnerModal';
 import performanceTracker from '../utils/performance';
 import dataCache from '../utils/dataCache';
+import { buildApiUrl, API_CONFIG } from '../config/apiConfig';
 
 // 버전 확인용 로그
-console.log('🔄 RegionDetailPage.js 로드됨 - 버전: v2024.12.19.001 (캐시 수정됨)');
+console.log('🔄 RegionDetailPage.js 로드됨 - 버전: v2024.12.08.003 (성능 최적화 집계 제외 옵션 적용)');
 
 function RegionDetailPage() {
   const [loading, setLoading] = useState(true);
@@ -17,7 +18,7 @@ function RegionDetailPage() {
   const [error, setError] = useState(null);
   const [showPartnerModal, setShowPartnerModal] = useState(false);
   const [performanceMetrics, setPerformanceMetrics] = useState({});
-  const [allData, setAllData] = useState([]);
+  const [includeAggregates, setIncludeAggregates] = useState(false); // 성능 최적화: 기본값 false
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -47,256 +48,169 @@ function RegionDetailPage() {
     console.log('빌드 모드:', isProd ? '프로덕션' : '개발');
   }, []);
   
-  // 실제 API 호출 함수 (캐싱 없이)
-  const fetchFromAPI = useCallback(async () => {
-    // API URL 결정 로직 - 환경에 따른 분기 처리
-    const baseUrl = window.location.hostname.includes("localhost")
-      ? "http://localhost:7071"
-      : "https://taxcredit-api-func-v2.azurewebsites.net";
-    
-    // API 호출 (페이지 파라미터 없음 - 전체 데이터 반환)
-    const apiUrl = `${baseUrl}/api/getSampleList?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}`;
-    
-    // 성능 측정과 함께 API 호출
-    return await performanceTracker.measureAPI(
-      `getSampleList-${sido}-${gugun}`,
-      async () => {
-        const response = await fetch(apiUrl, {
-          method: 'GET',
-          mode: 'cors',
-          headers: {
-            'Accept': 'application/json'
-          }
-        });
-        
-        // 응답 상태 확인
-        if (!response.ok) {
-          throw new Error(`API 오류: ${response.status} ${response.statusText}`);
-        }
-        
-        return await response.json();
-      }
-    );
-  }, [sido, gugun]);
-
-  // 데이터 로딩 함수 (캐싱 지원)
-  const fetchData = useCallback(async () => {
+  // 데이터 로딩 함수 (페이지 단위 호출로 변경)
+  const fetchPageData = useCallback(async (page = 1, pageSize = 10, withAggregates = includeAggregates) => {
     try {
-      console.log(`데이터 로딩 시작: sido=${sido}, gugun=${gugun}`);
+      console.log(`📡 페이지 단위 데이터 요청: page=${page}, pageSize=${pageSize}, includeAggregates=${withAggregates}`);
       
-      // 1. 캐시에서 먼저 확인 (전체 데이터용 특별 페이지 사이즈)
-      const cachedData = await dataCache.get(sido, gugun, 1, 9999);
-      if (cachedData) {
-        console.log('📬 캐시에서 전체 데이터 로드됨');
+      // 1. 캐시에서 먼저 확인
+      const cacheKey = `${sido}-${gugun}-${page}-${pageSize}-${withAggregates}`;
+      const cachedData = await dataCache.get(sido, gugun, page, pageSize);
+      if (cachedData && cachedData.aggregates?.aggregatesCalculated === withAggregates) {
+        console.log(`📬 캐시에서 페이지 ${page} 데이터 로드됨`);
         return cachedData;
       }
       
       // 2. 캐시에 없으면 API 호출
-      console.log('📡 API에서 전체 데이터 로드 중...');
-      const responseData = await fetchFromAPI();
+      console.log(`📡 API에서 페이지 ${page} 데이터 로드 중...`);
+      const response = await fetch(
+        `${buildApiUrl(API_CONFIG.ENDPOINTS.ANALYZE_COMPANY_DATA)}?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}&page=${page}&pageSize=${pageSize}&includeAggregates=${withAggregates}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`API 호출 실패: ${response.status} ${response.statusText}`);
+      }
       
-      // 3. 응답 데이터를 캐시에 저장 (전체 데이터용 특별 페이지 사이즈)
-      if (responseData && Array.isArray(responseData)) {
-        await dataCache.set(sido, gugun, 1, 9999, responseData);
+      const responseData = await response.json();
+      
+      // 3. 응답 데이터를 캐시에 저장
+      if (responseData && responseData.success) {
+        await dataCache.set(sido, gugun, page, pageSize, responseData);
       }
       
       return responseData;
       
     } catch (error) {
-      console.error("데이터 로딩 오류:", error);
+      console.error(`페이지 ${page} 데이터 로딩 오류:`, error);
       throw error;
     }
-  }, [sido, gugun, fetchFromAPI]);
+  }, [sido, gugun, includeAggregates]);
 
-  // 전체 데이터 로딩 함수
-  const loadAllData = useCallback(async () => {
+  // 전체 데이터 로딩 함수 - 페이지 단위로 변경
+  const loadPageData = useCallback(async (targetPage = 1) => {
     try {
       setLoading(true);
-      const responseData = await fetchData();
+      const pageSize = 10;
+      const responseData = await fetchPageData(targetPage, pageSize);
       
-      console.log('=== API 응답 데이터 분석 ===');
+      console.log('=== 성능 최적화된 페이지 단위 API 응답 데이터 분석 ===');
       
-      // 🔍 실제 데이터 구조 완전 분석 - 새로운 API 응답 구조 처리
-      let actualData = [];
-      let serverAggregates = null;
-      let serverPagination = null;
-      
-      if (responseData.data && Array.isArray(responseData.data)) {
-        // 새로운 API 응답 구조: { data: [...], pagination: {...}, aggregates: {...} }
-        actualData = responseData.data;
-        serverAggregates = responseData.aggregates;
-        serverPagination = responseData.pagination;
-        console.log('✅ 새로운 API 응답 구조 감지:', {
-          데이터건수: actualData.length,
-          서버집계: serverAggregates,
-          서버페이징: serverPagination
-        });
-      } else if (Array.isArray(responseData)) {
-        // 이전 API 응답 구조: 직접 배열
-        actualData = responseData;
-        console.log('✅ 이전 API 응답 구조 (직접 배열):', actualData.length, '건');
-      } else {
-        console.error('❌ 예상하지 못한 응답 구조:', responseData);
-        throw new Error('API 응답 구조를 인식할 수 없습니다');
+      if (!responseData.success) {
+        throw new Error(responseData.error || 'API 호출이 실패했습니다.');
       }
       
-      console.log(`📊 처리된 데이터: ${actualData.length}건`);
+      const { data: companies, pagination, aggregates, performance: perfData } = responseData;
       
-      // 첫 번째 항목 구조 확인
-      if (actualData.length > 0) {
-        const firstItem = actualData[0];
-        console.log('🔍 === 실제 API 응답 첫 번째 항목 완전 분석 ===');
-        console.log('📋 전체 키 목록:', Object.keys(firstItem));
-        console.log('📋 사업자등록번호:', firstItem.사업자등록번호);
-        console.log('📋 업종명:', firstItem.업종명);
-        console.log('📋 사업장주소:', firstItem.사업장주소);
-      }
-      
-      // 전체 데이터 저장
-      setAllData(actualData);
-      
-      // 서버에서 계산된 집계값 사용 (있는 경우)
-      if (serverAggregates) {
-        console.log('🎯 서버 계산된 aggregates 사용:', serverAggregates);
-        setAggregates(serverAggregates);
-        
-        // 서버 페이징 정보 사용
-        if (serverPagination) {
-          setPagination({
-            page: 1,
-            pageSize: 10, // 클라이언트에서는 10개씩 표시
-            totalCount: serverPagination.totalCount,
-            totalPages: Math.ceil(serverPagination.totalCount / 10),
-            hasNext: 1 < Math.ceil(serverPagination.totalCount / 10),
-            hasPrev: false
-          });
-        }
-      } else {
-        // 클라이언트에서 집계값 계산 (기존 로직)
-        const allEmployeeCounts = actualData.map(item => {
-          return Math.max(
-            item['2020'] || 0,
-            item['2021'] || 0,
-            item['2022'] || 0,
-            item['2023'] || 0,
-            item['2024'] || 0
-          );
-        }).filter(count => count > 0);
-        
-        const maxEmployeeCount = allEmployeeCounts.length > 0 
-          ? Math.max(...allEmployeeCounts) 
-          : 0;
-        const avgEmployeeCount = allEmployeeCounts.length > 0 
-          ? Math.round(allEmployeeCounts.reduce((sum, count) => sum + count, 0) / allEmployeeCounts.length) 
-          : 0;
-        const minEmployeeCount = allEmployeeCounts.length > 0 
-          ? Math.min(...allEmployeeCounts) 
-          : 0;
-        
-        const aggregatesData = {
-          maxEmployeeCount,
-          minEmployeeCount,
-          avgEmployeeCount,
-          totalCount: actualData.length
-        };
-        
-        console.log('🎯 클라이언트 계산된 aggregates:', aggregatesData);
-        setAggregates(aggregatesData);
-        
-        // 클라이언트 페이징 설정
-        const totalPages = Math.ceil(actualData.length / 10);
-        setPagination({
-          page: 1,
-          pageSize: 10,
-          totalCount: actualData.length,
-          totalPages: totalPages,
-          hasNext: 1 < totalPages,
-          hasPrev: false
-        });
-      }
-      
-      setPerformanceMetrics({
-        serverCalculated: false,
-        requestedAt: new Date().toISOString(),
-        fromCache: false,
-        duration: 0,
-        clientPaginated: true
+      console.log(`✅ 페이지 ${targetPage} 데이터 로드 완료:`, {
+        데이터건수: companies.length,
+        페이징정보: pagination,
+        집계정보: aggregates,
+        성능정보: perfData
       });
       
-      // 1페이지로 리셋
-      setCurrentPage(1);
+      // 현재 페이지 데이터 설정
+      setData(companies);
+      
+      // 서버에서 계산된 집계값 사용
+      setAggregates(aggregates);
+      
+      // 서버 페이징 정보 사용
+      setPagination({
+        page: pagination.page,
+        pageSize: pagination.pageSize,
+        totalCount: pagination.totalCount,
+        totalPages: pagination.totalPages,
+        hasNext: pagination.hasNext,
+        hasPrev: pagination.hasPrev
+      });
+      
+      setPerformanceMetrics({
+        serverCalculated: true,
+        requestedAt: new Date().toISOString(),
+        fromCache: false,
+        duration: perfData?.queryDuration || 0,
+        basicQueryTime: perfData?.basicQueryTime || 0,
+        serverPaginated: true,
+        optimizationApplied: perfData?.optimizationApplied || false,
+        aggregatesCalculated: aggregates.aggregatesCalculated
+      });
+      
+      // 현재 페이지 업데이트
+      setCurrentPage(targetPage);
+      
+      // 다음 페이지 선제적 캐싱
+      if (pagination.hasNext) {
+        dataCache.preloadNextPages(sido, gugun, targetPage, pageSize, fetchPageData);
+      }
       
     } catch (error) {
-      console.error("데이터 로딩 오류:", error);
+      console.error("페이지 데이터 로딩 오류:", error);
       setError(`데이터를 불러오는 중 오류가 발생했습니다: ${error.message}`);
-      setAllData([]);
+      setData([]);
     } finally {
       setLoading(false);
     }
-  }, [fetchData]);
+  }, [sido, gugun, fetchPageData]);
 
-  // 클라이언트 페이징 처리 함수
-  const updatePageData = useCallback(() => {
-    if (allData.length === 0) return;
+  // 집계 데이터 로드 함수
+  const loadAggregatesData = useCallback(async () => {
+    if (includeAggregates) return; // 이미 로드됨
     
-    const pageSize = 10;
-    const startIndex = (currentPage - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    const pageData = allData.slice(startIndex, endIndex);
-    
-    console.log(`🔄 클라이언트 페이징: ${startIndex}-${endIndex} (총 ${allData.length}건 중 ${pageData.length}건 표시)`);
-    
-    // 현재 페이지 데이터만 상태 업데이트
-    setData(pageData);
-    
-    // 페이지네이션 정보 업데이트
-    const totalPages = Math.ceil(allData.length / pageSize);
-    setPagination(prev => ({
-      ...prev,
-      page: currentPage,
-      hasNext: currentPage < totalPages,
-      hasPrev: currentPage > 1
-    }));
-    
-    // 필터링 검증 (로그는 다른 곳에서 처리)
-    console.log(`- 현재 페이지 데이터: ${pageData.length}건`);
-  }, [allData, currentPage]);
+    try {
+      setIncludeAggregates(true);
+      console.log('📊 집계 데이터 로딩 중...');
+      
+      const responseData = await fetchPageData(currentPage, 10, true);
+      if (responseData && responseData.success) {
+        setAggregates(responseData.aggregates);
+        setPerformanceMetrics(prev => ({
+          ...prev,
+          aggregatesCalculated: responseData.aggregates.aggregatesCalculated
+        }));
+      }
+    } catch (error) {
+      console.error('집계 데이터 로딩 실패:', error);
+      alert('집계 데이터를 불러오는 중 오류가 발생했습니다.');
+    }
+  }, [currentPage, fetchPageData, includeAggregates]);
 
-  // 전체 데이터 로딩 (sido, gugun 변경 시)
+  // 페이지 변경 핸들러
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      console.log(`🔄 페이지 변경: ${currentPage} → ${newPage}`);
+      loadPageData(newPage);
+      // 스크롤을 맨 위로 이동
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  // 초기 데이터 로딩 (sido, gugun 변경 시)
   useEffect(() => {
     if (sido) {
-      loadAllData();
+      loadPageData(1); // 항상 1페이지부터 시작
     } else {
       setError("시도 정보가 없습니다. 이전 페이지로 돌아가 지역을 선택해주세요.");
       setLoading(false);
     }
-  }, [sido, gugun, loadAllData]);
-
-  // 페이지 데이터 업데이트 (currentPage 변경 시)
-  useEffect(() => {
-    updatePageData();
-  }, [updatePageData]);
+  }, [sido, gugun, loadPageData]);
 
   const handleBack = () => {
     // 강제로 홈페이지로 이동
     navigate('/', { replace: true });
   };
   
-  // 페이지 변경 핸들러
-  const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= pagination.totalPages) {
-      setCurrentPage(newPage);
-      // 스크롤을 맨 위로 이동
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
-  
-  // 클라이언트측 필터링 (이제 서버에서 이미 필터링됨)
+  // 클라이언트측 필터링 제거 (서버에서 처리됨)
   const filteredData = useMemo(() => {
     return data || [];
   }, [data]);
   
-  // 최대값 계산 함수 (이제 서버에서 계산된 값 사용)
+  // 최대값 계산 함수 (서버에서 계산된 값 사용)
   const maxEmployeeCount = useMemo(() => {
     return aggregates.maxEmployeeCount || 0;
   }, [aggregates]);
@@ -444,21 +358,43 @@ function RegionDetailPage() {
               <div>
                 <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
                   전체 기업수: <span className="text-blue-600 font-bold">{(aggregates.totalCount || 0).toLocaleString()}</span>개
-                  <span className="hidden lg:inline text-gray-400 text-xs ml-2">(디버그: {JSON.stringify(aggregates)})</span>
+                  {performanceMetrics.optimizationApplied && (
+                    <span className="text-green-600 text-sm ml-2">⚡ 최적화됨</span>
+                  )}
                 </h2>
                 <div className="text-sm text-gray-600 mt-1 flex flex-wrap gap-4">
                   <span>페이지 {currentPage} / {pagination.totalPages || 1}</span>
-                  <span className="hidden md:inline">최대 고용인원: {aggregates.maxEmployeeCount || 0}명</span>
-                  <span className="hidden md:inline">평균 고용인원: {aggregates.avgEmployeeCount || 0}명</span>
-                  {performanceMetrics.serverCalculated && (
-                    <span className="hidden lg:inline text-green-600">서버 최적화 적용됨</span>
+                  {aggregates.aggregatesCalculated ? (
+                    <>
+                      <span className="hidden md:inline">최대 고용인원: {aggregates.maxEmployeeCount || 0}명</span>
+                      <span className="hidden md:inline">평균 고용인원: {aggregates.avgEmployeeCount || 0}명</span>
+                    </>
+                  ) : (
+                    <button
+                      onClick={loadAggregatesData}
+                      className="text-blue-600 hover:text-blue-800 underline text-sm"
+                    >
+                      📊 집계 정보 보기
+                    </button>
+                  )}
+                  {performanceMetrics.duration && (
+                    <span className="hidden lg:inline text-green-600">
+                      응답시간: {performanceMetrics.duration}ms
+                      {performanceMetrics.basicQueryTime && (
+                        <span className="text-gray-500"> (쿼리: {performanceMetrics.basicQueryTime}ms)</span>
+                      )}
+                    </span>
                   )}
                   {performanceMetrics.fromCache && (
                     <span className="hidden lg:inline text-blue-600">캐시에서 로드됨</span>
                   )}
                 </div>
               </div>
-              <div className="flex items-center">
+              <div className="flex items-center space-x-2">
+                {/* 성능 모드 표시 */}
+                <div className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                  ⚡ 빠른 로딩
+                </div>
                 <Link
                   to={`/partner?sido=${encodeURIComponent(sido)}&gugun=${encodeURIComponent(gugun)}`}
                   className="text-purple-700 font-semibold hover:underline flex items-center"

@@ -2,8 +2,8 @@
  * AI 모델 호출을 위한 유틸리티 함수
  */
 
-// Azure Functions 엔드포인트 - v3 최신 버전으로 수정
-const AI_FUNCTION_ENDPOINT = 'https://taxcredit-ai-func-v3.azurewebsites.net/api/analyze';
+// Azure Functions 엔드포인트 - 통합된 API 사용
+const AI_FUNCTION_ENDPOINT = 'https://taxcredit-api-func.azurewebsites.net/api/analyze';
 
 /**
  * AI 모델에 질의하는 함수

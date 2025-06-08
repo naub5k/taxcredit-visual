@@ -8,7 +8,6 @@ import CompanyDetailPage from './pages/CompanyDetailPage';
 import PartnerPage from './components/PartnerPage';
 import { RegionSummaryBox, PartnerServiceLink } from './components/RegionDetailComponents';
 import PartnerModal from './components/PartnerModal';
-import DataApiTest from './components/DataApiTest';
 import './App.css';
 import { regionGroups, employmentRegionData } from './data/employmentRegionData';
 
@@ -324,7 +323,6 @@ function App() {
         <Route path="/region-detail" element={<RegionDetailPage />} />
         <Route path="/partner" element={<PartnerPage />} />
         <Route path="/company/:bizno" element={<CompanyDetailPage />} />
-        <Route path="/api-test" element={<DataApiTest />} />
       </Routes>
     </Router>
   );

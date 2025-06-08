@@ -1,186 +1,144 @@
-// 성능 측정 유틸리티
+// 성능 측정 및 추적 유틸리티
 
 class PerformanceTracker {
   constructor() {
-    this.metrics = {};
-    this.isEnabled = process.env.NODE_ENV === 'development' || window.location.search.includes('debug=true');
-  }
-
-  // 측정 시작
-  start(label) {
-    if (!this.isEnabled) return;
-    
-    this.metrics[label] = {
-      startTime: performance.now(),
-      startMemory: this.getMemoryUsage()
-    };
-    
-    console.time(`⏱️ ${label}`);
-  }
-
-  // 측정 종료
-  end(label) {
-    if (!this.isEnabled || !this.metrics[label]) return;
-    
-    const endTime = performance.now();
-    const endMemory = this.getMemoryUsage();
-    const duration = Math.round(endTime - this.metrics[label].startTime);
-    
-    console.timeEnd(`⏱️ ${label}`);
-    
-    const result = {
-      label,
-      duration,
-      startTime: this.metrics[label].startTime,
-      endTime,
-      memoryUsed: endMemory - this.metrics[label].startMemory,
-      timestamp: new Date().toISOString()
-    };
-    
-    this.logMetric(result);
-    delete this.metrics[label];
-    
-    return result;
-  }
-
-  // 메모리 사용량 측정
-  getMemoryUsage() {
-    if (performance.memory) {
-      return {
-        used: Math.round(performance.memory.usedJSHeapSize / 1024 / 1024), // MB
-        total: Math.round(performance.memory.totalJSHeapSize / 1024 / 1024), // MB
-        limit: Math.round(performance.memory.jsHeapSizeLimit / 1024 / 1024) // MB
-      };
-    }
-    return { used: 0, total: 0, limit: 0 };
-  }
-
-  // 렌더링 성능 측정
-  measureRender(componentName, renderFunction) {
-    if (!this.isEnabled) return renderFunction();
-    
-    this.start(`Render: ${componentName}`);
-    const result = renderFunction();
-    
-    // 다음 프레임에서 측정 종료 (렌더링 완료 후)
-    requestAnimationFrame(() => {
-      this.end(`Render: ${componentName}`);
-    });
-    
-    return result;
+    this.measurements = new Map();
+    this.isEnabled = true;
   }
 
   // API 호출 성능 측정
-  async measureAPI(apiName, apiCall) {
-    if (!this.isEnabled) return await apiCall();
-    
-    this.start(`API: ${apiName}`);
-    
+  async measureAPI(name, apiFunction) {
+    if (!this.isEnabled) {
+      return await apiFunction();
+    }
+
+    const startTime = performance.now();
+    const startLabel = `API-${name}-start`;
+    const endLabel = `API-${name}-end`;
+
     try {
-      const result = await apiCall();
-      const metrics = this.end(`API: ${apiName}`);
-      
-      // 안전한 응답 크기 측정
-      const responseSize = this.estimateObjectSize(result);
-      const duration = metrics?.duration || 0;
-      
-      console.log(`📊 API ${apiName}: ${duration}ms, ~${responseSize}KB`);
-      
-      // 응답 구조 검증 및 보완
-      if (result && typeof result === 'object') {
-        // meta.performance.duration이 없으면 측정된 값으로 보완
-        if (!result.meta) {
-          result.meta = {};
-        }
-        if (!result.meta.performance) {
-          result.meta.performance = {};
-        }
-        if (typeof result.meta.performance.duration === 'undefined') {
-          result.meta.performance.duration = duration;
-        }
+      performance.mark(startLabel);
+      console.log(`⏱️ API 성능 측정 시작: ${name}`);
+
+      const result = await apiFunction();
+
+      performance.mark(endLabel);
+      const endTime = performance.now();
+      const duration = endTime - startTime;
+
+      // 측정 결과 저장
+      this.measurements.set(name, {
+        duration,
+        timestamp: Date.now(),
+        success: true
+      });
+
+      // 성능 로그
+      if (duration > 1000) {
+        console.warn(`⚠️ API 응답 지연: ${name} (${Math.round(duration)}ms)`);
+      } else {
+        console.log(`✅ API 응답 완료: ${name} (${Math.round(duration)}ms)`);
       }
-      
+
+      // Performance API measure 생성
+      try {
+        performance.measure(`API-${name}`, startLabel, endLabel);
+      } catch (e) {
+        console.warn('Performance measure 생성 실패:', e);
+      }
+
       return result;
     } catch (error) {
-      this.end(`API: ${apiName}`);
+      const endTime = performance.now();
+      const duration = endTime - startTime;
+
+      // 실패 측정 결과 저장
+      this.measurements.set(name, {
+        duration,
+        timestamp: Date.now(),
+        success: false,
+        error: error.message
+      });
+
+      console.error(`❌ API 오류: ${name} (${Math.round(duration)}ms)`, error);
       throw error;
     }
   }
 
-  // 객체 크기 추정
-  estimateObjectSize(obj) {
-    const jsonString = JSON.stringify(obj);
-    const sizeInBytes = new Blob([jsonString]).size;
-    return Math.round(sizeInBytes / 1024); // KB
-  }
-
-  // 메트릭 로깅
-  logMetric(metric) {
-    const logData = {
-      ...metric,
-      url: window.location.href,
-      userAgent: navigator.userAgent,
-      viewport: {
-        width: window.innerWidth,
-        height: window.innerHeight
-      }
-    };
-    
-    console.log(`📈 Performance Metric:`, logData);
-    
-    // 로컬 스토리지에 저장 (개발용)
-    if (this.isEnabled) {
-      const existingMetrics = JSON.parse(localStorage.getItem('performanceMetrics') || '[]');
-      existingMetrics.push(logData);
-      
-      // 최대 100개 항목만 유지
-      if (existingMetrics.length > 100) {
-        existingMetrics.splice(0, existingMetrics.length - 100);
-      }
-      
-      localStorage.setItem('performanceMetrics', JSON.stringify(existingMetrics));
+  // 렌더링 성능 측정
+  measureRender(componentName, renderFunction) {
+    if (!this.isEnabled) {
+      return renderFunction();
     }
+
+    const startTime = performance.now();
+    const result = renderFunction();
+    const endTime = performance.now();
+    const duration = endTime - startTime;
+
+    if (duration > 16) { // 60fps 기준 16ms
+      console.warn(`⚠️ 렌더링 지연: ${componentName} (${Math.round(duration)}ms)`);
+    }
+
+    return result;
   }
 
-  // 저장된 메트릭 조회
-  getStoredMetrics() {
-    return JSON.parse(localStorage.getItem('performanceMetrics') || '[]');
+  // 측정 결과 조회
+  getMeasurement(name) {
+    return this.measurements.get(name);
   }
 
-  // 메트릭 초기화
-  clearMetrics() {
-    localStorage.removeItem('performanceMetrics');
-    console.log('🗑️ Performance metrics cleared');
+  // 모든 측정 결과 조회
+  getAllMeasurements() {
+    return Object.fromEntries(this.measurements);
   }
 
-  // 성능 리포트 생성
+  // 성능 통계 생성
+  getStats() {
+    const measurements = Array.from(this.measurements.values());
+    if (measurements.length === 0) return null;
+
+    const durations = measurements.map(m => m.duration);
+    const successCount = measurements.filter(m => m.success).length;
+
+    return {
+      totalMeasurements: measurements.length,
+      successRate: (successCount / measurements.length) * 100,
+      averageDuration: durations.reduce((a, b) => a + b, 0) / durations.length,
+      minDuration: Math.min(...durations),
+      maxDuration: Math.max(...durations),
+      lastMeasurement: measurements[measurements.length - 1]?.timestamp
+    };
+  }
+
+  // 측정 데이터 정리
+  clearMeasurements() {
+    this.measurements.clear();
+    console.log('🧹 성능 측정 데이터 정리 완료');
+  }
+
+  // 성능 측정 활성화/비활성화
+  setEnabled(enabled) {
+    this.isEnabled = enabled;
+    console.log(`⚙️ 성능 측정 ${enabled ? '활성화' : '비활성화'}`);
+  }
+
+  // 성능 보고서 생성
   generateReport() {
-    const metrics = this.getStoredMetrics();
-    
-    if (metrics.length === 0) {
-      console.log('📊 No performance metrics available');
+    const stats = this.getStats();
+    if (!stats) {
+      console.log('📊 성능 측정 데이터가 없습니다.');
       return;
     }
-    
-    const apiMetrics = metrics.filter(m => m.label.startsWith('API:'));
-    const renderMetrics = metrics.filter(m => m.label.startsWith('Render:'));
-    
-    console.group('📊 Performance Report');
-    
-    if (apiMetrics.length > 0) {
-      const avgApiTime = apiMetrics.reduce((sum, m) => sum + m.duration, 0) / apiMetrics.length;
-      console.log(`🌐 API Calls: ${apiMetrics.length}, Avg: ${Math.round(avgApiTime)}ms`);
-    }
-    
-    if (renderMetrics.length > 0) {
-      const avgRenderTime = renderMetrics.reduce((sum, m) => sum + m.duration, 0) / renderMetrics.length;
-      console.log(`🎨 Renders: ${renderMetrics.length}, Avg: ${Math.round(avgRenderTime)}ms`);
-    }
-    
-    const currentMemory = this.getMemoryUsage();
-    console.log(`💾 Current Memory: ${currentMemory.used}MB / ${currentMemory.total}MB`);
-    
-    console.groupEnd();
+
+    console.log('📊 성능 측정 보고서:');
+    console.log(`   총 측정 횟수: ${stats.totalMeasurements}회`);
+    console.log(`   성공률: ${stats.successRate.toFixed(1)}%`);
+    console.log(`   평균 응답시간: ${Math.round(stats.averageDuration)}ms`);
+    console.log(`   최소 응답시간: ${Math.round(stats.minDuration)}ms`);
+    console.log(`   최대 응답시간: ${Math.round(stats.maxDuration)}ms`);
+
+    return stats;
   }
 }
 
