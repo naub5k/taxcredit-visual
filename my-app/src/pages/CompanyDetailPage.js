@@ -17,6 +17,7 @@ function CompanyDetailPage() {
     }
 
     fetchCompanyData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bizno]);
 
   const fetchCompanyData = async () => {

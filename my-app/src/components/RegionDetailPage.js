@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { CompanyDataBars } from './RegionDetailComponents';
 import PartnerModal from './PartnerModal';
-import performanceTracker from '../utils/performance';
 import dataCache from '../utils/dataCache';
 import { buildApiUrl, API_CONFIG } from '../config/apiConfig';
 
@@ -54,7 +53,6 @@ function RegionDetailPage() {
       console.log(`📡 페이지 단위 데이터 요청: page=${page}, pageSize=${pageSize}, includeAggregates=${withAggregates}`);
       
       // 1. 캐시에서 먼저 확인
-      const cacheKey = `${sido}-${gugun}-${page}-${pageSize}-${withAggregates}`;
       const cachedData = await dataCache.get(sido, gugun, page, pageSize);
       if (cachedData && cachedData.aggregates?.aggregatesCalculated === withAggregates) {
         console.log(`📬 캐시에서 페이지 ${page} 데이터 로드됨`);
