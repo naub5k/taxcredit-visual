@@ -173,7 +173,8 @@ function CompanyDetailPage() {
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">연도별 고용인원</h3>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                {[2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025].map(year => (
+                {/* 🚨 2020년부터 시작 (2019년 이전 경정청구 기한 만료) */}
+                {[2020, 2021, 2022, 2023, 2024, 2025].map(year => (
                   <div key={year} className="bg-gray-50 p-3 rounded text-center">
                     <div className="text-sm font-medium text-gray-600">{year}</div>
                     <div className="text-lg font-bold text-gray-800">
