@@ -4,7 +4,7 @@
     "private": true,
     "homepage": "/",
     "engines": {
-        "node": ">=18 <=20"
+        "node": "18.x"
     },
     "dependencies": {
         "@testing-library/dom": "^9.3.4",
