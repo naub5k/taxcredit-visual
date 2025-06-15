@@ -1,0 +1,74 @@
+# taxcredit-visual 프로젝트 규칙
+
+## 🔧 프로젝트 특성
+- **타입**: 시각화 웹앱 + API (복합 프로젝트)
+- **메인 경로**: `my-app/` (React 앱 + Azure Functions)
+- **프레임워크**: React 18 + TypeScript + Tailwind CSS
+- **API**: Azure Functions (Node.js)
+- **DB**: SQL Server 연동
+- **배포**: Azure Static Web Apps + Azure Functions
+
+## 📁 프로젝트 구조
+```
+taxcredit-visual/
+├── my-app/                    # 메인 앱
+│   ├── src/                   # React 소스
+│   ├── api/                   # Azure Functions
+│   ├── public/                # 정적 파일
+│   ├── package.json           # 의존성 관리
+│   ├── staticwebapp.config.json
+│   └── host.json             # Azure Functions 설정
+├── swa-db-connections/        # DB 연결 관련
+├── api-func/                  # 추가 함수들
+└── cursor_requests/           # 개발 요청 기록
+```
+
+## 🎯 핵심 기능
+- **데이터 시각화**: 세액공제 데이터 차트 및 그래프
+- **대시보드**: 종합적인 데이터 분석 뷰
+- **실시간 API**: 자체 Azure Functions로 데이터 처리
+- **DB 직접 연결**: mssql 패키지로 SQL Server 연동
+- **Recharts**: 차트 라이브러리 활용
+
+## 🔄 API 구조
+- **로컬 개발**: `http://localhost:7071/api/`
+- **배포 환경**: Azure Functions URL
+- **DB 연결**: mssql 패키지 사용
+- **CORS 설정**: React 앱과 Functions 간 통신
+
+## ⚠️ 주의사항
+- **복합 프로젝트**: React 앱과 Azure Functions가 같은 레포에 존재
+- **빌드 순서**: Functions 먼저, React 앱 나중
+- **로컬 개발**: Azure Functions Core Tools 필요
+- **환경 변수**: `local.settings.json` 관리 필수
+- **DB 연결**: 연결 문자열 보안 주의
+
+## 🚀 배포 설정
+- **Static Web App**: React 앱 배포
+- **Functions**: 자동으로 Azure Functions에 배포
+- **빌드 경로**: `my-app/build/`
+- **API 경로**: `my-app/api/`
+- **Node.js**: 18-20 버전 (.nvmrc 설정)
+
+## 🔧 개발 명령어
+```bash
+# 로컬 개발 시작
+cd my-app
+npm start                    # React 앱
+func start                   # Azure Functions (별도 터미널)
+
+# 빌드
+npm run build               # React 앱 빌드
+```
+
+## 📊 데이터 처리 특성
+- **시각화 중심**: 차트와 그래프 최적화
+- **대용량 데이터**: 성능 최적화 필요
+- **실시간 업데이트**: WebSocket 또는 폴링 방식
+- **반응형 디자인**: 다양한 화면 크기 지원
+
+## 📝 개발 히스토리
+- React + Azure Functions 통합 구조 구축
+- SQL Server 직접 연결 구현
+- Recharts 기반 시각화 시스템 개발
+- CORS 이슈 해결 및 배포 파이프라인 구축 
