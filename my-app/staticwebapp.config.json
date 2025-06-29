@@ -37,12 +37,7 @@
   ],
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": [
-      "/api/*",
-      "/static/**",
-      "/assets/**",
-      "*.{js,css,png,jpg,jpeg,gif,ico,svg,woff,woff2,ttf,eot,map,json,xml,txt}"
-    ]
+    "exclude": ["/api/*"]
   },
   "responseOverrides": {
     "404": {
