@@ -1,6 +1,20 @@
 {
   "routes": [
     {
+      "route": "/static/*",
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable"
+      },
+      "priority": 50
+    },
+    {
+      "route": "*.{js,css,png,jpg,jpeg,gif,ico,svg,woff,woff2,ttf,eot}",
+      "headers": {
+        "cache-control": "public, max-age=31536000"
+      },
+      "priority": 60
+    },
+    {
       "route": "/api/getSampleList",
       "allowedRoles": ["anonymous"],
       "serve": "https://taxcredit-api-func-v2.azurewebsites.net/api/getSampleList",
@@ -25,9 +39,9 @@
     "rewrite": "/index.html",
     "exclude": [
       "/api/*",
-      "/static/*",
-      "/assets/*",
-      "/*.{css,js,png,jpg,gif,ico,svg,json}"
+      "/static/**",
+      "/assets/**",
+      "*.{js,css,png,jpg,jpeg,gif,ico,svg,woff,woff2,ttf,eot,map,json,xml,txt}"
     ]
   },
   "responseOverrides": {
@@ -42,7 +56,14 @@
   "mimeTypes": {
     ".json": "application/json",
     ".html": "text/html",
-    ".js": "text/javascript"
+    ".js": "application/javascript",
+    ".css": "text/css",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+    ".ico": "image/x-icon",
+    ".svg": "image/svg+xml"
   },
   "platform": {
     "apiRuntime": "node:16"

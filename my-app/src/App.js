@@ -298,7 +298,7 @@ function AppContent() {
 
       <footer className="bg-gray-800 text-white py-3 mt-6">
         <div className="container mx-auto text-center">
-          <p className="text-sm">© 2025 고용이력부 시스템 | 데이터 출처: 덕율세무회계사무소</p>
+          <p className="text-sm">© 2025 고용이력부 시스템 | 데이터 출처: NTS_Claim</p>
         </div>
       </footer>
       

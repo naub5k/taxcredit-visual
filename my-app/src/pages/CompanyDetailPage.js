@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { API_CONFIG, buildApiUrl } from '../config/apiConfig';
+import CompanyInfo from '../components/shared/CompanyInfo';
+import GrowthChart from '../components/shared/GrowthChart';
 
 function CompanyDetailPage() {
   const { bizno } = useParams();
@@ -63,14 +65,55 @@ function CompanyDetailPage() {
   };
 
   const handleAnalyzeRedirect = () => {
-    // analyze 앱으로 리다이렉트
-    const analyzeUrl = `https://delightful-tree-001bf4c00.6.azurestaticapps.net/company/${bizno}`;
-    window.open(analyzeUrl, '_blank');
+    // 회원 전용 기능 알림 표시
+    const confirmResult = window.confirm(
+      '회원 전용 기능입니다.\n\n세액공제 분석 도구로 이동하시겠습니까?'
+    );
+    
+    if (confirmResult) {
+      // analyze 앱으로 리다이렉트 (경로 파라미터 + 자동 분석 실행 및 확장 파라미터 포함)
+      const analyzeUrl = `https://delightful-tree-001bf4c00.6.azurestaticapps.net/dashboard/${bizno}?autoAnalyze=true&expandAll=true`;
+      window.open(analyzeUrl, '_blank');
+    }
   };
 
-  const formatBusinessNumber = (bizno) => {
-    if (!bizno || bizno.length !== 10) return bizno;
-    return `${bizno.slice(0, 3)}-${bizno.slice(3, 5)}-${bizno.slice(5)}`;
+  // 지역 정보 표시 함수 (공통 컴포넌트용)
+  const getRegionDisplay = (companyData) => {
+    if (!companyData) return { regionType: '', sido: '', gugun: '' };
+    
+    // 수도권 여부 판단 (서울, 경기, 인천)
+    const sido = companyData.시도 || '';
+    const isCapitalRegion = ['서울특별시', '경기도', '인천광역시'].some(region => sido.includes(region));
+    const regionType = isCapitalRegion ? '수도권' : '수도권외';
+    
+    return {
+      regionType,
+      sido: companyData.시도 || '',
+      gugun: companyData.구군 || ''
+    };
+  };
+
+  // 차트 데이터 생성 함수 (TaxCreditDashboard 스타일)
+  const generateChartData = () => {
+    if (!companyData) return [];
+
+    const chartYears = [];
+    const years = ['2020', '2021', '2022', '2023', '2024', '2025']; // 2020년부터 시작
+    
+    for (let i = 0; i < years.length; i++) {
+      const year = years[i];
+      const employees = companyData[year] || companyData[`[${year}]`] || 0;
+      const prevEmployees = i === 0 ? employees : (companyData[years[i-1]] || companyData[`[${years[i-1]}]`] || 0);
+      const change = i === 0 ? 0 : employees - prevEmployees;
+      
+      chartYears.push({
+        year: year,
+        employees: employees,
+        change: change
+      });
+    }
+    
+    return chartYears;
   };
 
   if (loading) {
@@ -116,8 +159,12 @@ function CompanyDetailPage() {
     );
   }
 
+  const chartData = generateChartData();
+  const regionInfo = getRegionDisplay(companyData);
+
   return (
     <div className="min-h-screen bg-gray-100">
+      {/* 헤더 */}
       <header className="bg-blue-700 text-white p-4 shadow-md sticky top-0 z-50">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center">
@@ -137,63 +184,39 @@ function CompanyDetailPage() {
         </div>
       </header>
 
-      <main className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
+      <main className="container mx-auto py-6 px-4 sm:px-6 lg:px-8 max-w-7xl space-y-6">
         {companyData && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            {/* 기업 기본 정보 */}
-            <div className="border-b pb-6 mb-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">{companyData.사업장명}</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-medium text-gray-600 mb-1">사업자등록번호</h3>
-                  <p className="text-lg font-bold text-blue-700 font-mono">
-                    {formatBusinessNumber(companyData.사업자등록번호)}
-                  </p>
-                </div>
-                
-                {companyData.업종명 && (
-                  <div className="bg-green-50 p-4 rounded-lg">
-                    <h3 className="text-sm font-medium text-gray-600 mb-1">업종</h3>
-                    <p className="text-lg font-bold text-green-700">{companyData.업종명}</p>
-                  </div>
-                )}
-                
-                {companyData.시도 && (
-                  <div className="bg-purple-50 p-4 rounded-lg">
-                    <h3 className="text-sm font-medium text-gray-600 mb-1">지역</h3>
-                    <p className="text-lg font-bold text-purple-700">
-                      {companyData.시도} {companyData.구군}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
+          <>
+            {/* 회사 정보 - 공통 컴포넌트 사용 */}
+            <CompanyInfo 
+              companyInfo={{
+                bizno: companyData.사업자등록번호,
+                companyName: companyData.사업장명,
+                region: regionInfo.regionType,
+                industry: companyData.업종명 || '정보 없음',
+                sido: regionInfo.sido,
+                gugun: regionInfo.gugun
+              }}
+              accessLevel="partner" // visual에서는 기본적으로 partner 레벨
+              showFullDetails={true}
+            />
 
-            {/* 연도별 고용인원 정보 */}
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">연도별 고용인원</h3>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                {/* 🚨 2020년부터 시작 (2019년 이전 경정청구 기한 만료) */}
-                {[2020, 2021, 2022, 2023, 2024, 2025].map(year => (
-                  <div key={year} className="bg-gray-50 p-3 rounded text-center">
-                    <div className="text-sm font-medium text-gray-600">{year}</div>
-                    <div className="text-lg font-bold text-gray-800">
-                      {companyData[year.toString()] || companyData[`[${year}]`] || 0}명
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            {/* 인원증감 현황 - 공통 컴포넌트 사용 */}
+            <GrowthChart 
+              chartData={chartData}
+              accessLevel="partner" // visual에서는 기본적으로 partner 레벨
+              showChart={true}
+            />
 
-            {/* 파트너 전용 분석 버튼 */}
-            <div className="bg-purple-50 p-6 rounded-lg text-center">
+            {/* 세액공제 분석 시작 버튼 - 개선된 연결 기능 */}
+            <div className="bg-purple-50 border-2 border-purple-200 rounded-lg p-6 text-center">
               <h3 className="text-lg font-semibold text-purple-800 mb-2">세액공제 분석 서비스</h3>
               <p className="text-sm text-purple-600 mb-4">
                 파트너 전용 세액공제 분석을 위해 전문 분석 도구로 이동합니다.
               </p>
               <button 
                 onClick={handleAnalyzeRedirect}
-                className="bg-purple-700 text-white px-6 py-3 rounded-lg hover:bg-purple-800 transition-colors flex items-center justify-center mx-auto"
+                className="bg-purple-700 text-white px-6 py-3 rounded-lg hover:bg-purple-800 transition-colors flex items-center justify-center mx-auto font-semibold"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -211,9 +234,41 @@ function CompanyDetailPage() {
                 </pre>
               </div>
             )}
-          </div>
+          </>
         )}
       </main>
+
+      {/* 푸터 - 강화된 버전 */}
+      <footer className="bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 text-white py-6 mt-8 border-t-4 border-blue-500">
+        <div className="container mx-auto text-center space-y-3">
+          <div className="flex items-center justify-center space-x-2">
+            <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+              <span className="text-white font-bold text-xs">V</span>
+            </div>
+            <h3 className="text-lg font-bold text-white">Visual 프로젝트</h3>
+          </div>
+          <p className="text-sm text-gray-300">© 2025 세액공제 분석 시스템 | 고용증대 및 사회보험료 세액공제</p>
+          
+          {/* 중요 공지사항 - 강조된 박스 */}
+          <div className="bg-blue-600 bg-opacity-90 border-2 border-blue-400 rounded-lg p-4 mx-auto max-w-2xl">
+            <div className="flex items-center justify-center space-x-2 mb-2">
+              <div className="text-2xl">💡</div>
+              <h4 className="text-sm font-bold text-white">Visual 프로젝트 안내</h4>
+              <div className="text-2xl">💡</div>
+            </div>
+            <p className="text-white text-sm">
+              이곳에서 기업 정보를 확인하고 <strong className="text-yellow-300">세액공제 분석</strong>으로 이동하세요!
+            </p>
+            <div className="mt-2 pt-2 border-t border-blue-400">
+              <p className="text-xs text-blue-100">
+                🚀 <strong>2025-06-29 Visual 최신 배포</strong> | 💎 <strong>Partner 기능 제공중</strong>
+              </p>
+            </div>
+          </div>
+          
+          <p className="text-xs opacity-60 mt-1">🔴 LIVE · 2025-06-29 Visual 프로젝트</p>
+        </div>
+      </footer>
     </div>
   );
 }
