@@ -182,13 +182,17 @@ class RegionApiService {
         mode: 'cors'
       });
       
-      // 🔧 totalCount 보정 (정적 데이터 사용)
-      const staticTotalCount = search ? null : this.getStaticTotalCount(sido, gugun);
-      if (staticTotalCount !== null && result.pagination) {
-        result.pagination.totalCount = staticTotalCount;
-        result.pagination.totalPages = Math.ceil(staticTotalCount / pageSize);
-        result.pagination.hasNext = page < result.pagination.totalPages;
-      }
+      // 🔧 totalCount 보정 제거 - API 응답값 그대로 사용
+      // ❌ 기존: 정적 데이터로 덮어쓰기 (부정확)
+      // const staticTotalCount = search ? null : this.getStaticTotalCount(sido, gugun);
+      // if (staticTotalCount !== null && result.pagination) {
+      //   result.pagination.totalCount = staticTotalCount;
+      //   result.pagination.totalPages = Math.ceil(staticTotalCount / pageSize);
+      //   result.pagination.hasNext = page < result.pagination.totalPages;
+      // }
+      
+      // ✅ 새로운 방식: API 응답값 그대로 사용 (정확)
+      console.log(`📊 API 응답 totalCount: ${result.pagination?.totalCount}, 정적 데이터와 비교하지 않고 그대로 사용`);
       
       // 💾 캐시 저장
       cacheService.setRegionPage(sido, gugun, page, pageSize, result, search);

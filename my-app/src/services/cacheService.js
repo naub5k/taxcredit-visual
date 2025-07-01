@@ -291,6 +291,45 @@ class CacheService {
     
     console.groupEnd();
   }
+  
+  /**
+   * 🆕 totalCount 문제 해결을 위한 특별 캐시 클리어
+   * - 2025-07-01: "12개" 문제 해결을 위해 지역 관련 캐시 전체 삭제
+   */
+  clearTotalCountIssueCache() {
+    let cleared = 0;
+    
+    // 메모리 캐시에서 지역 관련 모든 캐시 삭제
+    for (const key of this.cache.keys()) {
+      if (key.includes('region-') || key.includes('aggregates-')) {
+        this.cache.delete(key);
+        cleared++;
+      }
+    }
+    
+    // localStorage에서도 지역 관련 캐시 삭제
+    const keys = Object.keys(this.storage);
+    keys.forEach(key => {
+      if (key.startsWith('cache_') && (key.includes('region') || key.includes('aggregates'))) {
+        this.storage.removeItem(key);
+        cleared++;
+      }
+    });
+    
+    // sessionStorage도 클리어
+    const sessionKeys = Object.keys(this.sessionStorage);
+    sessionKeys.forEach(key => {
+      if (key.includes('region') || key.includes('aggregates') || key.includes('totalCount')) {
+        this.sessionStorage.removeItem(key);
+        cleared++;
+      }
+    });
+    
+    this.stats.clears += cleared;
+    console.log(`🧹 totalCount 문제 해결을 위한 특별 캐시 클리어 완료: ${cleared}개 삭제`);
+    
+    return cleared;
+  }
 }
 
 // 싱글톤 인스턴스 생성 및 내보내기
