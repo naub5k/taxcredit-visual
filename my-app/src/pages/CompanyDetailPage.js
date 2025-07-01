@@ -71,8 +71,8 @@ function CompanyDetailPage() {
     );
     
     if (confirmResult) {
-      // analyze 앱으로 리다이렉트 (경로 파라미터 + 자동 분석 실행 및 확장 파라미터 포함)
-      const analyzeUrl = `https://delightful-tree-001bf4c00.6.azurestaticapps.net/dashboard/${bizno}?autoAnalyze=true&expandAll=true`;
+      // analyze 앱으로 리다이렉트 (자동 분석 실행)
+      const analyzeUrl = `https://delightful-tree-001bf4c00.6.azurestaticapps.net/dashboard/${bizno}?autoAnalyze=true`;
       window.open(analyzeUrl, '_blank');
     }
   };
