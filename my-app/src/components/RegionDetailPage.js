@@ -355,13 +355,17 @@ function RegionDetailPage() {
             <div className="mb-6 flex justify-between items-center">
               <div>
                 <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
-                  전체 기업수: <span className="text-blue-600 font-bold">{(aggregates.totalCount || 0).toLocaleString()}</span>개
+                  전체 기업수: <span className="text-blue-600 font-bold">
+                    {pagination.totalCount !== undefined ? pagination.totalCount.toLocaleString() : 
+                     aggregates.totalCount !== undefined ? aggregates.totalCount.toLocaleString() : 
+                     '로딩 중...'}
+                  </span>개
                   {performanceMetrics.optimizationApplied && (
                     <span className="text-green-600 text-sm ml-2">⚡ 최적화됨</span>
                   )}
                 </h2>
                 <div className="text-sm text-gray-600 mt-1 flex flex-wrap gap-4">
-                  <span>페이지 {currentPage} / {pagination.totalPages || 1}</span>
+                  <span>페이지 {currentPage} / {pagination.totalPages !== undefined ? pagination.totalPages : '...'}</span>
                   {aggregates.aggregatesCalculated ? (
                     <>
                       <span className="hidden md:inline">최대 고용인원: {aggregates.maxEmployeeCount || 0}명</span>

@@ -1,0 +1,411 @@
+# 📊 TaxCredit-Visual 프로젝트 규칙 (2025-06-29 버전)
+
+## 📋 **프로젝트 개요**
+- **프로젝트명**: TaxCredit-Visual (기업 정보 시각화 플랫폼)
+- **유형**: React JavaScript 웹앱 (Partner 버전)
+- **배포 환경**: Azure Static Web Apps
+- **접근 레벨**: Partner (상세 정보 + 시각화 차트)
+
+## 🚨 **CRITICAL: 2025-06-29 해결된 문제 (절대 반복 금지)**
+
+### **1. 라우팅 설정 오류 (staticwebapp.config.json)**
+```json
+// ✅ 반드시 사용 (최적화된 설정)
+{
+  "routes": [
+    { "route": "/static/*", "headers": { "Cache-Control": "public, max-age=31536000, immutable" } },
+    { "route": "*.css", "headers": { "content-type": "text/css" } },
+    { "route": "*.js", "headers": { "content-type": "application/javascript; charset=utf-8" } }
+  ],
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/static/*", "*.js", "*.css", "*.json", "*.ico", "*.png"]
+  }
+}
+```
+
+### **2. 공통 컴포넌트 중복 생성 방지**
+```javascript
+// ✅ 필수: shared 컴포넌트 사용
+import { CompanyInfo, GrowthChart } from '../components/shared';
+
+// ❌ 금지: 별도 컴포넌트 생성
+// analyze와 동일한 CompanyInfo 컴포넌트 별도 생성 금지
+```
+
+### **3. Analyze 연결 최적화**
+```javascript
+// ✅ 완전한 연결 URL (자동 분석 시작)
+const analyzeUrl = `https://delightful-tree-001bf4c00.6.azurestaticapps.net/dashboard/${bizno}?autoAnalyze=true&expandAll=true`;
+
+// ❌ 금지: 불완전한 URL
+// 단순히 `/dashboard/${bizno}`만 사용 금지
+```
+
+## 🏗️ **아키텍처 규칙**
+
+### **프로젝트 구조**
+```
+my-app/
+├── src/
+│   ├── components/
+│   │   ├── shared/                    # 🆕 공통 컴포넌트 (JS 버전)
+│   │   │   ├── CompanyInfo.js        # 회사 정보 (analyze와 공유)
+│   │   │   ├── GrowthChart.js        # 인원증감 차트 (analyze와 공유)
+│   │   │   └── index.js              # export 모음
+│   │   ├── CompanyDetailPage.js      # 메인 상세 페이지 (68줄로 단축)
+│   │   └── CompanyAIInfo.jsx         # AI 분석 정보
+│   ├── pages/                        # 라우팅 페이지
+│   └── services/                     # API 서비스
+├── api-func/                         # Azure Functions (getSampleList)
+└── staticwebapp.config.json         # 라우팅 설정
+```
+
+### **접근 제어 시스템**
+```javascript
+// 접근 레벨: 'public' | 'partner' | 'premium'
+
+// Partner 레벨 (visual 기본값)
+const accessLevel = 'partner';
+
+// 조건부 렌더링
+{accessLevel === 'partner' && (
+  <div>
+    <CompanyInfo accessLevel={accessLevel} />
+    <GrowthChart data={employeeData} />
+  </div>
+)}
+```
+
+## 🔧 **개발 규칙**
+
+### **1. 공통 컴포넌트 사용 필수**
+```javascript
+// ✅ 필수: shared 컴포넌트 사용
+import { CompanyInfo, GrowthChart } from '../components/shared';
+
+// ✅ 컴포넌트 사용 방법
+<CompanyInfo 
+  accessLevel="partner"
+  companyData={companyData}
+  showChart={true}
+/>
+```
+
+### **2. JavaScript 타입 체크**
+```javascript
+// PropTypes 사용 권장
+import PropTypes from 'prop-types';
+
+CompanyInfo.propTypes = {
+  accessLevel: PropTypes.oneOf(['public', 'partner', 'premium']),
+  companyData: PropTypes.object.isRequired,
+  showChart: PropTypes.bool
+};
+```
+
+### **3. API 연동 규칙**
+```javascript
+// API 호출 시 에러 처리 필수
+const fetchCompanyData = async (bizno) => {
+  try {
+    const response = await fetch(`/api/getSampleList?bizno=${bizno}`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    
+    // API 버전 로깅
+    console.log('API Version:', data.apiInfo?.version);
+    return data;
+  } catch (error) {
+    console.error('API Error:', error);
+    throw error;
+  }
+};
+```
+
+## 🎯 **성능 최적화 규칙**
+
+### **1. 컴포넌트 최적화**
+```javascript
+// React.memo 사용으로 불필요한 리렌더링 방지
+const CompanyDetailPage = React.memo(({ bizno }) => {
+  // 컴포넌트 로직
+});
+
+// useMemo, useCallback 적극 활용
+const memoizedData = useMemo(() => {
+  return processCompanyData(rawData);
+}, [rawData]);
+```
+
+### **2. 번들 크기 최적화**
+- **빌드 크기**: 85kB 이하 유지 (gzipped)
+- **동적 import**: 코드 스플리팅 적용
+- **이미지 최적화**: WebP 형식 사용
+
+### **3. 캐싱 전략**
+```javascript
+// 회사 데이터 캐싱
+const CACHE_DURATION = 5 * 60 * 1000; // 5분
+
+const getCachedData = (key) => {
+  const cached = sessionStorage.getItem(key);
+  if (cached) {
+    const { data, timestamp } = JSON.parse(cached);
+    if (Date.now() - timestamp < CACHE_DURATION) {
+      return data;
+    }
+  }
+  return null;
+};
+```
+
+## 🔗 **연동 규칙**
+
+### **1. Analyze 프로젝트 연결**
+```javascript
+// 완전한 분석 이동 함수
+const moveToAnalyze = (bizno) => {
+  const analyzeUrl = `https://delightful-tree-001bf4c00.6.azurestaticapps.net/dashboard/${bizno}?autoAnalyze=true&expandAll=true`;
+  
+  // 새 탭에서 열기
+  window.open(analyzeUrl, '_blank');
+  
+  // 로깅
+  console.log(`Moving to analyze: ${bizno}`);
+};
+```
+
+### **2. API 서버 함수 연동**
+```javascript
+// 로컬 getSampleList 함수 우선 사용
+const API_ENDPOINTS = {
+  local: '/api/getSampleList',
+  external: 'https://taxcredit-api-func.azurewebsites.net/api/analyzeCompanyData'
+};
+
+// 폴백 시스템
+const fetchWithFallback = async (bizno) => {
+  try {
+    return await fetch(API_ENDPOINTS.local);
+  } catch (error) {
+    console.log('Falling back to external API');
+    return await fetch(API_ENDPOINTS.external);
+  }
+};
+```
+
+## 🚀 **배포 규칙**
+
+### **1. GitHub Actions 설정**
+```yaml
+# .github/workflows/ 위치 필수
+app_location: "my-app"
+output_location: "build"
+api_location: "api-func"  # 로컬 함수 사용
+```
+
+### **2. 빌드 설정**
+```json
+// my-app/package.json
+{
+  "scripts": {
+    "build": "react-scripts build",
+    "test": "react-scripts test --watchAll=false"
+  }
+}
+```
+
+### **3. 배포 검증**
+```bash
+# 빌드 후 검증 필수
+cd my-app
+npm run build
+ls build/
+curl -I https://agreeable-coast-061c8f700.6.azurestaticapps.net/
+```
+
+## 🎨 **UI/UX 규칙**
+
+### **1. Footer 표시 규칙**
+```javascript
+// 좌측 하단 고정 배치
+<div className="fixed bottom-4 left-4 bg-green-500 text-white px-3 py-2 rounded-lg shadow-lg text-sm">
+  20250629 visual 적용됨
+</div>
+```
+
+### **2. 접근 제어 UI**
+```javascript
+// Partner 레벨 표시
+{accessLevel === 'partner' ? (
+  <div>
+    <CompanyInfo />
+    <GrowthChart />
+    <button onClick={() => moveToAnalyze(bizno)}>
+      상세 분석 보기
+    </button>
+  </div>
+) : (
+  <div className="text-center p-8">
+    <p>Partner 이상 레벨에서 이용 가능합니다.</p>
+    <button className="bg-blue-500 text-white px-4 py-2 rounded">
+      업그레이드
+    </button>
+  </div>
+)}
+```
+
+### **3. 차트 시각화 규칙**
+```javascript
+// 그라데이션 색상 적용
+const chartConfig = {
+  colors: {
+    gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    positive: '#10B981', // 증가
+    negative: '#EF4444', // 감소
+    neutral: '#6B7280'   // 변화 없음
+  }
+};
+```
+
+## 🧪 **테스트 규칙**
+
+### **1. 컴포넌트 테스트**
+```javascript
+// React Testing Library 사용
+import { render, screen, fireEvent } from '@testing-library/react';
+
+test('CompanyDetailPage renders correctly', () => {
+  render(<CompanyDetailPage bizno="1234567890" />);
+  expect(screen.getByText('회사 정보')).toBeInTheDocument();
+});
+```
+
+### **2. API 테스트**
+```javascript
+// Mock API 응답
+const mockApiResponse = {
+  success: true,
+  data: { /* 테스트 데이터 */ },
+  apiInfo: { version: 'v1.0.1' }
+};
+
+// API 호출 테스트
+jest.mock('../services/apiService', () => ({
+  fetchCompanyData: jest.fn(() => Promise.resolve(mockApiResponse))
+}));
+```
+
+## 🛡️ **보안 규칙**
+
+### **1. 데이터 검증**
+```javascript
+// 사업자번호 유효성 검사
+const validateBizno = (bizno) => {
+  const regex = /^\d{10}$/;
+  return regex.test(bizno);
+};
+
+// XSS 방지
+const sanitizeInput = (input) => {
+  return input.replace(/[<>\"']/g, '');
+};
+```
+
+### **2. 민감 정보 처리**
+```javascript
+// 개인정보 마스킹
+const maskPersonalInfo = (info) => {
+  if (info.length <= 4) return info;
+  return info.substring(0, 2) + '*'.repeat(info.length - 4) + info.substring(info.length - 2);
+};
+```
+
+## 📊 **모니터링 규칙**
+
+### **1. 성능 측정**
+```javascript
+// 페이지 로딩 시간 측정
+const measurePageLoad = () => {
+  const startTime = performance.mark('page-start');
+  
+  window.addEventListener('load', () => {
+    performance.mark('page-end');
+    performance.measure('page-load', 'page-start', 'page-end');
+    
+    const measure = performance.getEntriesByName('page-load')[0];
+    console.log(`Page load time: ${measure.duration}ms`);
+  });
+};
+```
+
+### **2. 에러 추적**
+```javascript
+// 전역 에러 핸들러
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('Unhandled Promise Rejection:', event.reason);
+  // 에러 로깅 서비스로 전송
+});
+```
+
+## 🔄 **Git 작업 규칙**
+
+### **1. 커밋 메시지**
+```bash
+# 형식: type(scope): description
+feat(components): add shared CompanyInfo component
+fix(routing): resolve SPA navigation issue
+perf(api): optimize getSampleList function
+```
+
+### **2. 브랜치 전략**
+```bash
+# feature 브랜치에서 개발
+git checkout -b feature/shared-components
+
+# 완료 후 master로 병합
+git checkout master
+git merge feature/shared-components
+git push origin master  # 자동 배포
+```
+
+## 📈 **성과 측정 규칙**
+
+### **1. 코드 품질**
+- **코드 단축률**: 87% (468줄 → 68줄)
+- **컴포넌트 재사용**: 100% (analyze와 공유)
+- **ESLint 경고**: 0개 유지
+
+### **2. 성능 지표**
+- **초기 로딩**: 2.5초 이하
+- **페이지 전환**: 500ms 이하
+- **API 응답**: 1.2초 이하
+
+---
+
+## ⚠️ **중요 금지사항**
+
+1. **라우팅 설정 임의 변경 금지**: staticwebapp.config.json 고정
+2. **공통 컴포넌트 중복 생성 금지**: shared 폴더 사용 필수
+3. **불완전한 analyze 연결 금지**: autoAnalyze=true 파라미터 필수
+4. **API 에러 처리 생략 금지**: try-catch 블록 필수
+5. **빌드 테스트 생략 금지**: 배포 전 반드시 검증
+
+---
+
+## 🎯 **다음 개발 우선순위**
+
+### **1. 단기 목표**
+- [ ] Footer 텍스트 업데이트 (20250615 → 20250629)
+- [ ] 모바일 반응형 최적화
+- [ ] 로딩 성능 개선
+
+### **2. 중장기 목표**
+- [ ] Premium 레벨 기능 추가
+- [ ] 실시간 알림 시스템
+- [ ] PWA 지원 추가
+
+---
+
+**📌 마지막 업데이트**: 2025-06-29 00:50 | **버전**: v0.2.1 | **상태**: �� Production Ready 
